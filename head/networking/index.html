@@ -741,7 +741,7 @@
         
   
   <span class="md-ellipsis">
-    Uninstall
+    Reset (Uninstall)
   </span>
   
 
@@ -1207,6 +1207,27 @@
   
   <span class="md-ellipsis">
     Node-local load balancing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cplb/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Control plane load balancing
   </span>
   
 
@@ -2193,6 +2214,13 @@
 <td>konnectivity</td>
 <td>worker &lt;-&gt; controller</td>
 <td>Konnectivity is used as "reverse" tunnel between kube-apiserver and worker kubelets</td>
+</tr>
+<tr>
+<td>TCP</td>
+<td>112</td>
+<td>keepalived</td>
+<td>controller &lt;-&gt; controller</td>
+<td>Only required for control plane load balancing vrrpInstances for ip address 224.0.0.18. 224.0.0.18 is a multicast IP address defined in <a href="https://datatracker.ietf.org/doc/html/rfc3768#section-5.2.2">RFC 3768</a>.</td>
 </tr>
 </tbody>
 </table>
