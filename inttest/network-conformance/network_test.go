@@ -86,6 +86,9 @@ func (s *networkSuite) TestK0sGetsUp() {
 	s.T().Log("waiting to see CNI pods ready for", daemonSetName)
 	s.NoErrorf(common.WaitForDaemonSet(s.Context(), kc, daemonSetName, metav1.NamespaceSystem), "%s did not start", daemonSetName)
 
+	s.T().Log("waiting for konnectivity-agent to be ready")
+	s.NoErrorf(common.WaitForDaemonSet(s.Context(), kc, "konnectivity-agent", metav1.NamespaceSystem), "konnectivity-agent did not start")
+
 	restConfig, err := s.GetKubeConfig("controller0")
 	s.Require().NoError(err)
 
@@ -128,6 +131,8 @@ func (s *networkSuite) TestK0sGetsUp() {
 		Path:      "/tmp/sonobuoy",
 	})
 	s.Require().NoError(err)
+	s.T().Log("Test status: ", status.Status)
+
 	s.Require().NoError(retrieveResults(r, ec))
 
 	s.T().Log("sonobuoy test status: ", status)
