@@ -23,7 +23,7 @@ require (
 	github.com/distribution/reference v0.6.0
 	github.com/evanphx/json-patch v5.9.11+incompatible
 	github.com/fsnotify/fsnotify v1.7.0
-	github.com/go-logr/logr v1.4.2
+	github.com/go-logr/logr v1.4.3
 	github.com/go-openapi/jsonpointer v0.21.0
 	github.com/go-playground/validator/v10 v10.22.0
 	github.com/google/go-cmp v0.7.0
@@ -57,7 +57,7 @@ require (
 	golang.org/x/crypto v0.40.0
 	golang.org/x/mod v0.26.0
 	golang.org/x/sync v0.16.0
-	golang.org/x/sys v0.34.0
+	golang.org/x/sys v0.40.0
 	golang.org/x/tools v0.34.0
 	google.golang.org/grpc v1.68.1
 	helm.sh/helm/v3 v3.18.5
@@ -240,15 +240,15 @@ require (
 	go.etcd.io/etcd/raft/v3 v3.5.15 // indirect
 	go.etcd.io/etcd/server/v3 v3.5.15 // indirect
 	go.opencensus.io v0.24.0 // indirect
-	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
+	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.46.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.58.0 // indirect
-	go.opentelemetry.io/otel v1.33.0 // indirect
+	go.opentelemetry.io/otel v1.40.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.33.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.33.0 // indirect
-	go.opentelemetry.io/otel/metric v1.33.0 // indirect
-	go.opentelemetry.io/otel/sdk v1.33.0 // indirect
-	go.opentelemetry.io/otel/trace v1.33.0 // indirect
+	go.opentelemetry.io/otel/metric v1.40.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.40.0 // indirect
+	go.opentelemetry.io/otel/trace v1.40.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.4.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
