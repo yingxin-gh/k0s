@@ -5,13 +5,9 @@ package containerd
 
 import (
 	"bufio"
-	"bytes"
 	"context"
-	"crypto/md5"
-	"encoding/hex"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"sync"
@@ -307,24 +303,13 @@ func (c *Component) Stop() error {
 	return nil
 }
 
-// This is the md5sum of the default k0s containerd config file before 1.27
-const pre1_27ConfigSum = "59039b43303742a5496b13fd57f9beec"
-
 // isK0sManagedConfig checks if the config file is k0s managed:
 //   - If the config file doesn't exist, it's k0s managed.
-//   - If the config file's md5sum matches the pre 1.27 config, it's k0s managed.
 //   - If the config file starts with the magic marker line "# k0s_managed=true",
 //     it's k0s managed.
 func isK0sManagedConfig(path string) (_ bool, err error) {
 	// If the file does not exist, it's k0s managed (new install)
 	if !file.Exists(path) {
-		return true, nil
-	}
-	pre1_27Managed, err := isPre1_27ManagedConfig(path)
-	if err != nil {
-		return false, err
-	}
-	if pre1_27Managed {
 		return true, nil
 	}
 	// Check if the config file has the magic marker
@@ -334,41 +319,8 @@ func isK0sManagedConfig(path string) (_ bool, err error) {
 	}
 	defer func() { err = errors.Join(err, f.Close()) }()
 	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		switch scanner.Text() {
-		case "": // K0s versions before 1.30 had a leading empty line.
-			continue
-		case "# k0s_managed=true":
-			return true, nil
-		}
-	}
-	return false, scanner.Err()
-}
-
-func isPre1_27ManagedConfig(path string) (bool, error) {
-	// Check MD5 sum of the config file
-	// If it matches the pre 1.27 config, it's k0s managed
-	md5sum := md5.New()
-	f, err := os.Open(path)
-	if err != nil {
-		return false, err
-	}
-	defer f.Close()
-
-	if _, err := io.Copy(md5sum, f); err != nil {
-		return false, err
-	}
-
-	sum := md5sum.Sum(nil)
-
-	pre1_27ConfigSumBytes, err := hex.DecodeString(pre1_27ConfigSum)
-	if err != nil {
-		return false, err
-	}
-
-	if bytes.Equal(pre1_27ConfigSumBytes, sum) {
+	if scanner.Scan() && scanner.Text() == "# k0s_managed=true" {
 		return true, nil
 	}
-
-	return false, nil
+	return false, scanner.Err()
 }

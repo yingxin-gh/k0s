@@ -53,34 +53,17 @@ func Test_isK0sManagedConfig(t *testing.T) {
 		require.False(t, isManaged)
 	})
 
-	t.Run("should return true for pre-1.30 generated config", func(t *testing.T) {
+	t.Run("should return true if file has marker", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		configPath := filepath.Join(tmpDir, "containerd.toml")
-		cfg := `
-# k0s_managed=true
-# This is a placeholder configuration for k0s managed containerD. 
+		cfg := `# k0s_managed=true
+# This is a placeholder configuration for k0s managed containerD.
 # If you wish to override the config, remove the first line and replace this file with your custom configuration.
 # For reference see https://github.com/containerd/containerd/blob/main/docs/man/containerd-config.toml.5.md
 version = 3
 imports = [
 	"/run/k0s/containerd-cri.toml",
 ]
-`
-		err := os.WriteFile(configPath, []byte(cfg), 0644)
-		require.NoError(t, err)
-		isManaged, err := isK0sManagedConfig(configPath)
-		require.NoError(t, err)
-		require.True(t, isManaged)
-	})
-
-	t.Run("should return true if md5 matches with pre 1.27 default config", func(t *testing.T) {
-		tmpDir := t.TempDir()
-		configPath := filepath.Join(tmpDir, "containerd.toml")
-		cfg := `
-# This is a placeholder configuration for k0s managed containerD.
-# If you wish to customize the config replace this file with your custom configuration.
-# For reference see https://github.com/containerd/containerd/blob/main/docs/man/containerd-config.toml.5.md
-version = 2
 `
 		err := os.WriteFile(configPath, []byte(cfg), 0644)
 		require.NoError(t, err)
