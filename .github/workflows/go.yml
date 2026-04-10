@@ -461,7 +461,6 @@ jobs:
       - name: "Docker prune"
         if: always()
         run: docker system prune --force --filter "until=$((24*7))h"
-  
   win-wsl-smoketest:
     name: "Windows WSL Smoketest"
     needs: [build-k0s]
