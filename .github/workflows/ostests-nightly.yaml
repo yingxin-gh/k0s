@@ -52,7 +52,7 @@ jobs:
       # will be chosen at some point.
       - name: Select
         id: select
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const distros = JSON.parse(process.env.DISTRIBUTIONS)
