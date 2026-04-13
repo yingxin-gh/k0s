@@ -30,6 +30,13 @@
   ],
   "packageRules": [
     {
+      "description": "Special version scheme for k0sproject OCI images",
+      "matchPackageNames": [
+        "quay.io/k0sproject/*"
+      ],
+      "versioning": "regex:^v?(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)(?:-(?:k0s\\.|iptables\\d+\\.\\d+\\.\\d+-)?(?<build>\\d+))?$"
+    },
+    {
       "description": "Ignore all Go dependencies by default",
       "enabled": false,
       "matchManagers": [
