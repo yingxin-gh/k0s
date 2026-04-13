@@ -524,18 +524,19 @@ func (c *command) start(ctx context.Context, flags *config.ControllerOptions, de
 
 	disableAutopilot := slices.Contains(flags.DisableComponents, constant.AutopilotComponentName)
 
-	if !slices.Contains(flags.DisableComponents, constant.WorkerConfigComponentName) {
-		// Create new dedicated leasepool for worker config reconciler
-		leaseName := fmt.Sprintf("k0s-%s-%s", constant.WorkerConfigComponentName, constant.KubernetesMajorMinorVersion)
-		workerConfigLeasePool := leaderelector.NewLeasePool(c.K0sVars.InvocationID, adminClientFactory, leaseName)
-		clusterComponents.Add(ctx, workerConfigLeasePool)
-
-		reconciler, err := workerconfig.NewReconciler(c.K0sVars, nodeConfig, adminClientFactory, workerConfigLeasePool, enableKonnectivity, disableAutopilot)
-		if err != nil {
-			return err
-		}
-		clusterComponents.Add(ctx, reconciler)
+	if slices.Contains(flags.DisableComponents, constant.WorkerConfigComponentName) {
+		logrus.Warnf("disabling worker-config component is deprecated. This flag is ignored")
 	}
+	// Create new dedicated leasepool for worker-config reconciler
+	leaseName := fmt.Sprintf("k0s-%s-%s", constant.WorkerConfigComponentName, constant.KubernetesMajorMinorVersion)
+	workerConfigLeasePool := leaderelector.NewLeasePool(c.K0sVars.InvocationID, adminClientFactory, leaseName)
+	clusterComponents.Add(ctx, workerConfigLeasePool)
+
+	reconciler, err := workerconfig.NewReconciler(c.K0sVars, nodeConfig, adminClientFactory, workerConfigLeasePool, enableKonnectivity, disableAutopilot)
+	if err != nil {
+		return err
+	}
+	clusterComponents.Add(ctx, reconciler)
 
 	if !slices.Contains(flags.DisableComponents, constant.SystemRBACComponentName) {
 		clusterComponents.Add(ctx, &controller.SystemRBAC{

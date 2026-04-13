@@ -11,14 +11,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAvailableComponents_SortedAndUnique(t *testing.T) {
-	expected := slices.Clone(availableComponents)
-	slices.Sort(expected)
+func TestComponents_SortedAndUnique(t *testing.T) {
+	for key, components := range map[string][]string{"available": availableComponents, "deprecated": deprecatedComponents} {
+		expected := slices.Clone(components)
+		slices.Sort(expected)
 
-	assert.Equal(t, expected, availableComponents, "Available components aren't sorted")
+		assert.Equal(t, expected, components, key+" components aren't sorted")
 
-	expected = slices.Compact(expected)
-	assert.Equal(t, expected, availableComponents, "Available components contain duplicates")
+		expected = slices.Compact(expected)
+		assert.Equal(t, expected, components, key+" components contain duplicates")
+	}
 }
 
 func TestControllerOptions_Normalize(t *testing.T) {
@@ -29,6 +31,16 @@ func TestControllerOptions_Normalize(t *testing.T) {
 		err := underTest.Normalize()
 
 		assert.ErrorContains(t, err, "unknown component i-dont-exist")
+	})
+
+	t.Run("acceptsDeprecatedComponents", func(t *testing.T) {
+		disabled := []string{"worker-config"}
+
+		underTest := ControllerOptions{DisableComponents: disabled}
+		err := underTest.Normalize()
+
+		require.NoError(t, err)
+		assert.Equal(t, disabled, underTest.DisableComponents)
 	})
 
 	t.Run("removesDuplicateComponents", func(t *testing.T) {
