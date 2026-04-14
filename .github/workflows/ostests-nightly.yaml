@@ -52,7 +52,7 @@ jobs:
       # will be chosen at some point.
       - name: Select
         id: select
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const distros = JSON.parse(process.env.DISTRIBUTIONS)
@@ -170,7 +170,7 @@ jobs:
           ' >>"$GITHUB_OUTPUT"
 
       - name: Notify Slack
-        uses: slackapi/slack-github-action@v3.0.1
+        uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 # v3.0.1
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook
