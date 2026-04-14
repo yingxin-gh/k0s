@@ -4,8 +4,8 @@
 package stringmap
 
 import (
-	"fmt"
 	"maps"
+	"slices"
 )
 
 // StringMap defines map like arguments that can be "evaluated" into args=value pairs
@@ -21,21 +21,17 @@ func Merge(inputMap StringMap, existingMap StringMap) StringMap {
 
 // ToArgs maps the data into cmd arguments like foo=bar baz=baf
 func (m StringMap) ToArgs() []string {
-	args := make([]string, len(m))
-	idx := 0
-	for k, v := range m {
-		args[idx] = fmt.Sprintf("%s=%s", k, v)
-		idx++
+	args := make([]string, 0, len(m))
+	for _, name := range slices.Sorted(maps.Keys(m)) {
+		args = append(args, name+"="+m[name])
 	}
 	return args
 }
 
 func (m StringMap) ToDashedArgs() []string {
-	args := make([]string, len(m))
-	idx := 0
-	for k, v := range m {
-		args[idx] = fmt.Sprintf("--%s=%s", k, v)
-		idx++
+	args := make([]string, 0, len(m))
+	for _, name := range slices.Sorted(maps.Keys(m)) {
+		args = append(args, "--"+name+"="+m[name])
 	}
 	return args
 }
