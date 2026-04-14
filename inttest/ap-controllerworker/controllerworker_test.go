@@ -144,7 +144,12 @@ func (s *controllerworkerSuite) TestApply() {
 						Name:  "pause",
 						Image: constant.KubePauseContainerImage + ":" + constant.KubePauseContainerImageVersion,
 					}},
-					Tolerations: []corev1.Toleration{constants.ControlPlaneToleration},
+					Tolerations: []corev1.Toleration{
+						{
+							Key:    string(constants.LabelNodeRoleControlPlane),
+							Effect: corev1.TaintEffectNoSchedule,
+						},
+					},
 					Affinity: &corev1.Affinity{
 						PodAntiAffinity: &corev1.PodAntiAffinity{
 							RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{{

@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"sync"
 
+	utilnet "k8s.io/apimachinery/pkg/util/net"
 	"k8s.io/client-go/transport"
 	"k8s.io/utils/ptr"
 )
@@ -43,15 +44,22 @@ func (c *transportControl) wrap(wrapTransport transport.WrapperFunc) transport.W
 }
 
 func (c *transportControl) transport(rt http.RoundTripper) http.RoundTripper {
-	transport, ok := rt.(*http.Transport)
-	if !ok {
+	// Unwrap any RoundTripperWrapper layers
+	for {
+		if _, ok := rt.(*http.Transport); ok {
+			break
+		}
+		if w, ok := rt.(utilnet.RoundTripperWrapper); ok {
+			rt = w.WrappedRoundTripper()
+			continue
+		}
 		err := fmt.Errorf("expected an *http.Transport, got %T", rt)
 		return roundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			return nil, err
 		})
 	}
 
-	transport = transport.Clone()
+	transport := rt.(*http.Transport).Clone()
 
 	if dial := transport.DialContext; dial == nil && transport.Dial != nil {
 		err := errors.New("cannot deal with the deprecated transport.Dial")
