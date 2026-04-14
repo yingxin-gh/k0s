@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 	"testing"
 	"testing/iotest"
@@ -30,11 +31,20 @@ func TestAirgapListImages(t *testing.T) {
 	// on a host executing this test, it will interfere with it.
 	require.NoFileExists(t, "/run/k0s/k0s.yaml", "Runtime config exists and will interfere with this test.")
 
-	defaultImage := v1beta1.DefaultEnvoyProxyImage().URI()
+	defaults := v1beta1.DefaultClusterImages()
+	defaultEnvoyImage := v1beta1.DefaultEnvoyProxyImage().URI()
 
 	t.Run("HonorsIOErrors", func(t *testing.T) {
+		var args []string
+		switch runtime.GOOS {
+		case "linux", "windows":
+		default:
+			// Hard-code the platform when testing on platforms that won't list any images
+			args = slices.Insert(args, 0, "--platform=linux/amd64")
+		}
+
 		var writes uint
-		underTest, _, stderr := newAirgapListImagesCmdWithConfig(t, "")
+		underTest, _, stderr := newAirgapListImagesCmdWithConfig(t, "", args...)
 		underTest.SilenceUsage = true // Cobra writes usage to stdout on errors 🤔
 		underTest.SetOut(internalio.WriterFunc(func(p []byte) (int, error) {
 			writes++
@@ -47,17 +57,123 @@ func TestAirgapListImages(t *testing.T) {
 	})
 
 	t.Run("All", func(t *testing.T) {
-		underTest, out, err := newAirgapListImagesCmdWithConfig(t, "{}", "--all")
-
-		require.NoError(t, underTest.Execute())
-		lines := strings.Split(out.String(), "\n")
-		if runtime.GOARCH == "arm" {
-			assert.NotContains(t, lines, defaultImage)
-		} else {
-			assert.Contains(t, lines, defaultImage)
+		tests := []struct {
+			name                    string
+			args                    []string
+			contained, notContained []string
+		}{
+			{
+				name: "linux-amd64",
+				args: []string{"--all", "--platform=linux/amd64"},
+				contained: []string{
+					defaults.KubeProxy.URI(),
+					defaults.Pause.URI(),
+					defaults.KubeRouter.CNI.URI(),
+					defaults.Calico.CNI.URI(),
+					defaults.PushGateway.URI(),
+					defaultEnvoyImage,
+				},
+				notContained: []string{
+					defaults.Windows.KubeProxy.URI(),
+				},
+			},
+			{
+				name: "linux-arm-v7",
+				args: []string{"--all", "--platform=linux/arm/v7"},
+				contained: []string{
+					defaults.KubeProxy.URI(),
+					defaults.PushGateway.URI(),
+				},
+				notContained: []string{
+					defaultEnvoyImage,
+				},
+			},
+			{
+				name: "windows-amd64",
+				args: []string{"--all", "--platform=windows/amd64"},
+				contained: []string{
+					defaults.Windows.KubeProxy.URI(),
+					defaults.Windows.Pause.URI(),
+					defaults.Calico.Windows.CNI.URI(),
+					defaults.Calico.Windows.Node.URI(),
+				},
+				notContained: []string{
+					defaults.KubeProxy.URI(),
+					defaults.Pause.URI(),
+					defaults.CoreDNS.URI(),
+					defaults.KubeRouter.CNI.URI(),
+					defaultEnvoyImage,
+				},
+			},
 		}
 
-		assert.Empty(t, err.String())
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				underTest, out, err := newAirgapListImagesCmdWithConfig(t, "{}", test.args...)
+
+				require.NoError(t, underTest.Execute())
+
+				lines := strings.Split(out.String(), "\n")
+				for _, contained := range test.contained {
+					assert.Contains(t, lines, contained)
+				}
+				for _, notContained := range test.notContained {
+					assert.NotContains(t, lines, notContained)
+				}
+				assert.Empty(t, err.String())
+			})
+		}
+	})
+
+	t.Run("Defaults", func(t *testing.T) {
+		tests := []struct {
+			name                    string
+			args                    []string
+			contained, notContained []string
+		}{
+			{
+				name: "linux-amd64",
+				args: []string{"--platform=linux/amd64"},
+				contained: []string{
+					defaults.KubeProxy.URI(),
+					defaults.KubeRouter.CNI.URI(),
+				},
+				notContained: []string{
+					defaults.Calico.CNI.URI(),
+					defaults.PushGateway.URI(),
+					defaultEnvoyImage,
+				},
+			},
+			{
+				name: "windows-amd64",
+				args: []string{"--platform=windows/amd64"},
+				contained: []string{
+					defaults.Windows.KubeProxy.URI(),
+					defaults.Windows.Pause.URI(),
+				},
+				notContained: []string{
+					defaults.Calico.Windows.CNI.URI(),
+					defaults.KubeProxy.URI(),
+				},
+			},
+		}
+
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				underTest, out, err := newAirgapListImagesCmdWithConfig(t, "{}", test.args...)
+
+				require.NoError(t, underTest.Execute())
+
+				lines := strings.Split(out.String(), "\n")
+				for _, contained := range test.contained {
+					assert.Contains(t, lines, contained)
+				}
+				for _, notContained := range test.notContained {
+					assert.NotContains(t, lines, notContained)
+				}
+				assert.Empty(t, err.String())
+			})
+		}
 	})
 
 	t.Run("NodeLocalLoadBalancing", func(t *testing.T) {
@@ -80,23 +196,22 @@ spec:
 		for _, test := range []struct {
 			name                    string
 			enabled                 bool
+			args                    []string
 			contained, notContained []string
 		}{
-			{"enabled", true, []string{customImage}, []string{defaultImage}},
-			{"disabled", false, nil, []string{customImage, defaultImage}},
+			{"enabled-linux-amd64", true, []string{"--platform=linux/amd64"}, []string{customImage}, []string{defaultEnvoyImage}},
+			{"enabled-linux-arm-v7", true, []string{"--platform=linux/arm/v7"}, nil, []string{customImage, defaultEnvoyImage}},
+			{"enabled-windows-amd64", true, []string{"--platform=windows/amd64"}, nil, []string{customImage, defaultEnvoyImage}},
+			{"disabled-linux-amd64", false, []string{"--platform=linux/amd64"}, nil, []string{customImage, defaultEnvoyImage}},
 		} {
 			t.Run(test.name, func(t *testing.T) {
-				underTest, out, err := newAirgapListImagesCmdWithConfig(t, fmt.Sprintf(yamlData, test.enabled))
+				underTest, out, err := newAirgapListImagesCmdWithConfig(t, fmt.Sprintf(yamlData, test.enabled), test.args...)
 
 				require.NoError(t, underTest.Execute())
 
 				lines := strings.Split(out.String(), "\n")
 				for _, contained := range test.contained {
-					if runtime.GOARCH == "arm" {
-						assert.NotContains(t, lines, contained)
-					} else {
-						assert.Contains(t, lines, contained)
-					}
+					assert.Contains(t, lines, contained)
 				}
 				for _, notContained := range test.notContained {
 					assert.NotContains(t, lines, notContained)

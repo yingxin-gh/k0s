@@ -15,6 +15,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 
+	"github.com/containerd/platforms"
+
 	"github.com/stretchr/testify/suite"
 )
 
@@ -78,7 +80,10 @@ func (s *AirgapSuite) TestK0sGetsUp() {
 	ssh, err := s.SSH(ctx, s.WorkerNode(0))
 	s.Require().NoError(err)
 	defer ssh.Disconnect()
-	for _, i := range airgap.GetImageURIs(v1beta1.DefaultClusterSpec(), true) {
+	for _, i := range airgap.GetImageURIs(airgap.TargetEnv{
+		Spec:     v1beta1.DefaultClusterSpec(),
+		Platform: platforms.DefaultSpec(),
+	}, true) {
 		output, err := ssh.ExecWithOutput(ctx, fmt.Sprintf(`k0s ctr i ls "name==%s"`, i))
 		s.Require().NoError(err)
 		s.Require().Containsf(output, "io.cri-containerd.pinned=pinned", "expected %s image to have io.cri-containerd.pinned=pinned label", i)

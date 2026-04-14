@@ -10,13 +10,17 @@ import (
 	"github.com/k0sproject/k0s/pkg/airgap"
 	"github.com/k0sproject/k0s/pkg/config"
 
+	"github.com/containerd/platforms"
 	"github.com/spf13/cobra"
 )
 
 func newAirgapListImagesCmd() *cobra.Command {
 	var (
 		debugFlags internal.DebugFlags
-		all        bool
+		targetEnv  = airgap.TargetEnv{
+			Platform: platforms.DefaultSpec(),
+		}
+		all bool
 	)
 
 	cmd := &cobra.Command{
@@ -31,13 +35,14 @@ func newAirgapListImagesCmd() *cobra.Command {
 				return err
 			}
 
-			clusterConfig, err := opts.K0sVars.NodeConfig()
-			if err != nil {
+			if clusterConfig, err := opts.K0sVars.NodeConfig(); err != nil {
 				return fmt.Errorf("failed to get config: %w", err)
+			} else {
+				targetEnv.Spec = clusterConfig.Spec
 			}
 
 			out := cmd.OutOrStdout()
-			for _, uri := range airgap.GetImageURIs(clusterConfig.Spec, all) {
+			for _, uri := range airgap.GetImageURIs(targetEnv, all) {
 				if _, err := fmt.Fprintln(out, uri); err != nil {
 					return err
 				}
@@ -51,6 +56,7 @@ func newAirgapListImagesCmd() *cobra.Command {
 	flags := cmd.Flags()
 	flags.AddFlagSet(config.GetPersistentFlagSet())
 	flags.AddFlagSet(config.FileInputFlag())
+	flags.Var((*platformFlag)(&targetEnv.Platform), "platform", "the platform to list images for")
 	flags.BoolVar(&all, "all", false, "include all images, even if they are not used in the current configuration")
 
 	return cmd
