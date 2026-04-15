@@ -28,6 +28,7 @@ type Profile struct {
 	PauseImage             *v1beta1.ImageSpec
 	DualStackEnabled       bool
 	AutopilotDisabled      bool
+	PrimaryAddressFamily   v1beta1.PrimaryAddressFamilyType
 }
 
 func (p *Profile) DeepCopy() *Profile {
@@ -145,6 +146,7 @@ func forEachConfigMapEntry(profile *Profile, f func(fieldName string, ptr any)) 
 		"pauseImage":             &profile.PauseImage,
 		"dualStackEnabled":       &profile.DualStackEnabled,
 		"autopilotDisabled":      &profile.AutopilotDisabled,
+		"primaryAddressFamily":   &profile.PrimaryAddressFamily,
 	} {
 		f(fieldName, ptr)
 	}
