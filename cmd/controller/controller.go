@@ -220,7 +220,7 @@ func (c *command) start(ctx context.Context, flags *config.ControllerOptions, de
 	logrus.Infof("using listen port: %d", nodeConfig.Spec.API.Port)
 	logrus.Infof("using sans: %s", nodeConfig.Spec.API.SANs)
 
-	dnsAddress, err := nodeConfig.Spec.Network.DNSAddress(nodeConfig.PrimaryAddressFamily())
+	dnsAddress, err := nodeConfig.Spec.Network.DNSAddress(nodeConfig.Spec.PrimaryAddressFamily())
 	if err != nil {
 		return err
 	}
@@ -464,7 +464,7 @@ func (c *command) start(ctx context.Context, flags *config.ControllerOptions, de
 			leaderElector,
 			adminClientFactory,
 			net.DefaultResolver,
-			nodeConfig.PrimaryAddressFamily(),
+			nodeConfig.Spec.PrimaryAddressFamily(),
 		))
 	}
 
@@ -571,7 +571,7 @@ func (c *command) start(ctx context.Context, flags *config.ControllerOptions, de
 			LogLevel:              c.LogLevels.KubeControllerManager,
 			K0sVars:               c.K0sVars,
 			DisableLeaderElection: singleController,
-			ServiceClusterIPRange: nodeConfig.Spec.Network.BuildServiceCIDR(nodeConfig.PrimaryAddressFamily()),
+			ServiceClusterIPRange: nodeConfig.Spec.Network.BuildServiceCIDR(nodeConfig.Spec.PrimaryAddressFamily()),
 			ExtraArgs:             flags.KubeControllerManagerExtraArgs,
 		})
 	}

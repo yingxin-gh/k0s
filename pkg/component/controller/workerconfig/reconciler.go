@@ -86,7 +86,7 @@ var (
 func NewReconciler(k0sVars *config.CfgVars, nodeConfig *v1beta1.ClusterConfig, clientFactory kubeutil.ClientFactoryInterface, leaderElector leaderelector.Interface, konnectivityEnabled, autopilotDisabled bool) (*Reconciler, error) {
 	log := logrus.WithFields(logrus.Fields{"component": "workerconfig.Reconciler"})
 
-	clusterDNSIPString, err := nodeConfig.Spec.Network.DNSAddress(nodeConfig.PrimaryAddressFamily())
+	clusterDNSIPString, err := nodeConfig.Spec.Network.DNSAddress(nodeConfig.Spec.PrimaryAddressFamily())
 	if err != nil {
 		return nil, err
 	}
