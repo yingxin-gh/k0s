@@ -206,6 +206,10 @@ jobs:
       - name: "Pre: Fixup directories"
         run: find . -type d -not -perm /u+w -exec chmod u+w '{}' \;
 
+      - name: Clean Docker before build
+        run: |
+          docker system prune --all --volumes --force
+
       - name: Set up Docker Context for Buildx
         run: docker context create builders
 
@@ -238,11 +242,7 @@ jobs:
             --output-file=k0s.exe.sig k0s.exe
           cat k0s.exe.sig
 
-      - name: Clean Docker
-        run: |
-          docker system prune --all --volumes --force
-
-      - name: Upload Release Assets
+      - name: Upload Release Assets - Binary
         uses: shogo82148/actions-upload-release-asset@96bc1f0cb850b65efd58a6b5eaa0a69f88d38077 # v1.10.0
         with:
           upload_url: ${{ needs.release.outputs.upload_url }}
@@ -257,6 +257,11 @@ jobs:
           asset_path: ./k0s.exe.sig
           asset_name: k0s-${{ needs.release.outputs.tag_name }}-amd64.exe.sig
           asset_content_type: application/octet-stream
+
+      - name: Clean Docker after build
+        if: always()
+        run: |
+          docker system prune --all --volumes --force
 
       # https://github.com/actions/checkout/issues/273#issuecomment-642908752
       # Golang mod cache tends to set directories to read-only, which breaks any
