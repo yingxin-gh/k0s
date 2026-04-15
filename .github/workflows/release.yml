@@ -70,6 +70,8 @@ jobs:
 
       - name: Check out code into the Go module directory
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
 
       - name: Prepare build environment
         run: .github/workflows/prepare-build-env.sh
@@ -220,6 +222,8 @@ jobs:
 
       - name: Check out code into the Go module directory
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
 
       - name: Prepare build environment
         run: .github/workflows/prepare-build-env.sh
@@ -298,10 +302,11 @@ jobs:
 
       - name: Check out code into the Go module directory
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
 
       - name: Prepare build environment
         run: .github/workflows/prepare-build-env.sh
-        working-directory: ./
 
       - name: Build
         run: make EMBEDDED_BINS_BUILDMODE=docker
@@ -404,10 +409,11 @@ jobs:
 
       - name: Check out code into the Go module directory
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
 
       - name: Prepare build environment
         run: .github/workflows/prepare-build-env.sh
-        working-directory: ./
 
       - name: Build
         run: make EMBEDDED_BINS_BUILDMODE=docker
@@ -539,6 +545,8 @@ jobs:
 
       - name: Run git checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
