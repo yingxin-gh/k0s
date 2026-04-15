@@ -17,6 +17,7 @@ import (
 	"github.com/k0sproject/k0s/internal/pkg/dir"
 	"github.com/k0sproject/k0s/internal/pkg/file"
 	"github.com/k0sproject/k0s/internal/pkg/stringmap"
+	"github.com/k0sproject/k0s/pkg/apis/k0s/v1beta1"
 	"github.com/k0sproject/k0s/pkg/assets"
 	"github.com/k0sproject/k0s/pkg/component/manager"
 	"github.com/k0sproject/k0s/pkg/config"
@@ -37,19 +38,20 @@ import (
 
 // Kubelet is the component implementation to manage kubelet
 type Kubelet struct {
-	NodeName            apitypes.NodeName
-	CRISocket           string
-	EnableCloudProvider bool
-	K0sVars             *config.CfgVars
-	Kubeconfig          string
-	Configuration       kubeletv1beta1.KubeletConfiguration
-	StaticPods          StaticPods
-	LogLevel            string
-	ClusterDNS          string
-	Labels              map[string]string
-	Taints              []string
-	ExtraArgs           stringmap.StringMap
-	DualStackEnabled    bool
+	NodeName             apitypes.NodeName
+	CRISocket            string
+	EnableCloudProvider  bool
+	K0sVars              *config.CfgVars
+	Kubeconfig           string
+	Configuration        kubeletv1beta1.KubeletConfiguration
+	StaticPods           StaticPods
+	LogLevel             string
+	ClusterDNS           string
+	Labels               map[string]string
+	Taints               []string
+	ExtraArgs            stringmap.StringMap
+	DualStackEnabled     bool
+	PrimaryAddressFamily v1beta1.PrimaryAddressFamilyType
 
 	configPath     string
 	supervisor     *supervisor.Supervisor
@@ -128,7 +130,11 @@ func (k *Kubelet) Start(ctx context.Context) error {
 		// The kubelet will perform some extra validations on the discovered IP
 		// addresses in the private function k8s.io/kubernetes/pkg/kubelet.validateNodeIP
 		// which won't be replicated here.
-		args["--node-ip"] = ipv4.String() + "," + ipv6.String()
+		if k.PrimaryAddressFamily == v1beta1.PrimaryFamilyIPv6 {
+			args["--node-ip"] = ipv6.String() + "," + ipv4.String()
+		} else {
+			args["--node-ip"] = ipv4.String() + "," + ipv6.String()
+		}
 	}
 
 	switch runtime.GOOS {

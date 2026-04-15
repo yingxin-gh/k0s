@@ -274,18 +274,19 @@ func (c *Command) Start(ctx context.Context, nodeName apitypes.NodeName, kubelet
 	}
 	componentManager.Add(ctx,
 		&worker.Kubelet{
-			NodeName:            nodeName,
-			CRISocket:           c.CriSocket,
-			EnableCloudProvider: c.CloudProvider,
-			K0sVars:             c.K0sVars,
-			StaticPods:          staticPods,
-			Kubeconfig:          kubeletKubeconfigPath,
-			Configuration:       *workerConfig.KubeletConfiguration.DeepCopy(),
-			LogLevel:            c.LogLevels.Kubelet,
-			Labels:              c.Labels,
-			Taints:              c.Taints,
-			ExtraArgs:           kubeletExtraArgs,
-			DualStackEnabled:    workerConfig.DualStackEnabled,
+			NodeName:             nodeName,
+			CRISocket:            c.CriSocket,
+			EnableCloudProvider:  c.CloudProvider,
+			K0sVars:              c.K0sVars,
+			StaticPods:           staticPods,
+			Kubeconfig:           kubeletKubeconfigPath,
+			Configuration:        *workerConfig.KubeletConfiguration.DeepCopy(),
+			LogLevel:             c.LogLevels.Kubelet,
+			Labels:               c.Labels,
+			Taints:               c.Taints,
+			ExtraArgs:            kubeletExtraArgs,
+			DualStackEnabled:     workerConfig.DualStackEnabled,
+			PrimaryAddressFamily: workerConfig.PrimaryAddressFamily,
 		})
 
 	addPlatformSpecificComponents(ctx, componentManager, c.K0sVars, workerConfig, controller, certManager)
