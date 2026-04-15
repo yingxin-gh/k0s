@@ -147,6 +147,19 @@
       "groupSlug": "containerd"
     },
     {
+      "description": "Ignore indirect containerd v1 gomod bumps",
+      "enabled": false,
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchDepTypes": [
+        "indirect"
+      ],
+      "matchPackageNames": [
+        "github.com/containerd/containerd"
+      ]
+    },
+    {
       "description": "Group all konnectivity bumps",
       "enabled": true,
       "matchDepNames": [
