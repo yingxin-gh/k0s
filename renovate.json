@@ -393,7 +393,7 @@
         "**/*.yml"
       ],
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>\\S+)( registryUrl=(?<registryUrl>.+))? depName=(?<depName>\\S+)( versioning=(?<versioning>.+))?\\n[^:=\\n]+[:=][ \\t]*[\"']?(?<currentValue>\\S+?)[\"']?[ \\t]*(:?#|\\n)",
+        "# renovate: datasource=(?<datasource>\\S+)( registryUrl=(?<registryUrl>.+))? depName=(?<depName>\\S+)( versioning=(?<versioning>.+))?\\n[^:=\\n]+[:=][ \\t]*[\"']?(?<currentValue>[^@\\s\"']+)(?:@(?<currentDigest>[0-9a-f]{40}))?[\"']?[ \\t]*(:?#|\\n)",
         "[=:][ \\t]*[\"']?(?<currentValue>\\S+?)[\"']?[ \\t]*# renovate: datasource=(?<datasource>\\S+)( registryUrl=(?<registryUrl>.+))? depName=(?<depName>\\S+)( versioning=(?<versioning>.+))?\\n"
       ],
       "datasourceTemplate": "{{{datasource}}}",
