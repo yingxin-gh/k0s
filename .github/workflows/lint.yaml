@@ -81,6 +81,9 @@ jobs:
             build/cache/go/build
             build/cache/golangci-lint
 
+      - name: Register golangci-lint problem matchers
+        run: echo "::add-matcher::.github/golangci-lint-problem-matchers.json"
+
       - name: Run linter
         env:
           CACHE_HIT_GOLANGCI: "${{ steps.cache-golangci.outputs.cache-hit }}"

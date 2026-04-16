@@ -1,0 +1,18 @@
+{
+  "_comment": "Adopted from https://github.com/golangci/golangci-lint-action/blob/789f114c52eaee9275c87b15fc90e449e56d1b0a/problem-matchers.json",
+  "problemMatcher": [
+    {
+      "owner": "golangci-lint",
+      "severity": "error",
+      "pattern": [
+        {
+          "regexp": "^([^:]+):(\\d+):(?:(\\d+):)?\\s+(.+ \\(.+\\))$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "message": 4
+        }
+      ]
+    }
+  ]
+}
