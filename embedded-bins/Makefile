@@ -91,6 +91,7 @@ build_docker_image = \
 	  --build-arg CONTAINERD_BINS="$(containerd_bins)" \
 	  --build-arg KUBERNETES_BINS="$(kubernetes_bins)" \
 	  --build-arg VERSION=$($(patsubst %/Dockerfile,%,$<)_version) \
+	  --build-arg REVISION=$($(patsubst %/Dockerfile,%,$<)_revision) \
 	  --build-arg SOURCE_DATE_EPOCH=$(SOURCE_DATE_EPOCH) \
 	  --build-arg BUILDIMAGE=$($(patsubst %/Dockerfile,%,$<)_buildimage) \
 	  --build-arg BUILD_GO_TAGS=$($(patsubst %/Dockerfile,%,$<)_build_go_tags) \

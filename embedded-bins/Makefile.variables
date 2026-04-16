@@ -16,8 +16,11 @@ runc_build_go_tags = "seccomp"
 runc_build_go_ldflags = -w -s
 runc_build_go_ldflags_extra = -extldflags=-static
 
-# renovate: datasource=github-releases depName=containerd/containerd
-containerd_version = 2.2.2
+# renovate: datasource=github-tags depName=containerd/containerd
+containerd_version_and_rev = 2.2.2@301b2dac98f15c27117da5c8af12118a041a31d9
+containerd_revision = $(word 2,$(subst @, ,$(containerd_version_and_rev)))
+containerd_version = $(word 1,$(subst @, ,$(containerd_version_and_rev)))
+containerd_build_extra_args = --build-arg REVISION=$(containerd_revision)
 containerd_buildimage = $(golang_buildimage)
 containerd_build_go_tags = "apparmor,selinux"
 containerd_build_shim_go_cgo_enabled = 0

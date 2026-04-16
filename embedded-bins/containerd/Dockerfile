@@ -19,10 +19,17 @@ RUN if [ ! -z "$(which apt)" ]; then \
     fi
 
 ARG VERSION
-RUN mkdir -p $GOPATH/src/github.com/containerd/containerd
-RUN \
-  git -c advice.detachedHead=false clone -b v$VERSION --depth=1 https://github.com/containerd/containerd.git $GOPATH/src/github.com/containerd/containerd
 WORKDIR /go/src/github.com/containerd/containerd
+RUN git -c advice.detachedHead=false clone --revision refs/tags/v$VERSION --depth=1 https://github.com/containerd/containerd.git .
+ARG REVISION
+RUN set -eu \
+  && if [ -n "$REVISION" ]; then \
+    actual=$(git rev-parse HEAD); \
+    [ "$actual" = "$REVISION" ] || { \
+      printf 'error: tag v%s resolves to %s, expected %s\n' "$VERSION" "$actual" "$REVISION" >&2; \
+      exit 1; \
+    }; \
+  fi
 
 ARG TARGET_OS \
   BUILD_GO_TAGS \
