@@ -1,15 +1,15 @@
 # https://www.alpinelinux.org/cloud/
 
-data "aws_ami" "alpine_3_20" {
-  count = var.os == "alpine_3_20" ? 1 : 0
+data "aws_ami" "alpine_3_21" {
+  count = var.os == "alpine_3_21" ? 1 : 0
 
   owners      = ["538276064493"]
-  name_regex  = "^alpine-3\\.20\\.\\d+-(aarch64|x86_64)-uefi-tiny($|-.*)"
+  name_regex  = "^alpine-3\\.21\\.\\d+-(aarch64|x86_64)-uefi-tiny($|-.*)"
   most_recent = true
 
   filter {
     name   = "name"
-    values = ["alpine-3.20.*-*-uefi-tiny*"]
+    values = ["alpine-3.21.*-*-uefi-tiny*"]
   }
 
   filter {
@@ -30,16 +30,16 @@ data "aws_ami" "alpine_3_20" {
   lifecycle {
     precondition {
       condition     = var.arch == "x86_64"
-      error_message = "Unsupported architecture for Alpine Linux 3.20."
+      error_message = "Unsupported architecture for Alpine Linux 3.21."
     }
   }
 }
 
 locals {
-  os_alpine_3_20 = var.os != "alpine_3_20" ? {} : {
+  os_alpine_3_21 = var.os != "alpine_3_21" ? {} : {
     node_configs = {
       default = {
-        ami_id = one(data.aws_ami.alpine_3_20.*.id)
+        ami_id = one(data.aws_ami.alpine_3_21.*.id)
 
         user_data    = templatefile("${path.module}/os_alpine_userdata.tftpl", { worker = true })
         ready_script = file("${path.module}/os_alpine_ready.sh")
