@@ -482,6 +482,7 @@ func (c *ClusterConfig) Validate() (errs []error) {
 // - Network.PrimaryAddressFamily
 // - Install
 func (c *ClusterConfig) GetClusterWideConfig() *ClusterConfig {
+	primaryAF := c.PrimaryAddressFamily()
 	c = c.DeepCopy()
 	if c != nil && c.Spec != nil {
 		c.Spec.API = nil
@@ -490,7 +491,7 @@ func (c *ClusterConfig) GetClusterWideConfig() *ClusterConfig {
 			c.Spec.Network.ServiceCIDR = ""
 			c.Spec.Network.ClusterDomain = ""
 			c.Spec.Network.ControlPlaneLoadBalancing = nil
-			c.Spec.Network.PrimaryAddressFamily = ""
+			c.Spec.Network.PrimaryAddressFamily = primaryAF
 		}
 		c.Spec.Install = nil
 	}
