@@ -99,7 +99,7 @@ func (o *ControllerOptions) Normalize() error {
 	// Normalize component names
 	var disabledComponents []string
 	for _, disabledComponent := range o.DisableComponents {
-		if !slices.Contains(availableComponents, disabledComponent) {
+		if !slices.Contains(availableComponents, disabledComponent) && !slices.Contains(deprecatedComponents, disabledComponent) {
 			return fmt.Errorf("unknown component %s", disabledComponent)
 		}
 
@@ -279,6 +279,11 @@ var availableComponents = []string{
 	constant.SystemRBACComponentName,
 	constant.UpdateProberComponentName,
 	constant.WindowsNodeComponentName,
+}
+
+// deprecatedComponents are components that are no longer configurable via
+// --disable-components but are still accepted for backward compatibility.
+var deprecatedComponents = []string{
 	constant.WorkerConfigComponentName,
 }
 
