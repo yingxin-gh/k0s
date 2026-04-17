@@ -23,12 +23,23 @@
   },
   "enabledManagers": [
     "gomod",
+    "terraform",
     "custom.regex"
   ],
   "postUpdateOptions": [
     "gomodTidy"
   ],
   "packageRules": [
+    {
+      "description": "Use OpenTofu registry for Terraform providers and modules",
+      "matchDatasources": [
+        "terraform-provider",
+        "terraform-module"
+      ],
+      "registryUrls": [
+        "https://registry.opentofu.org"
+      ]
+    },
     {
       "description": "Special version scheme for k0sproject OCI images",
       "matchPackageNames": [
