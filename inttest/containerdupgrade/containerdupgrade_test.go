@@ -69,12 +69,20 @@ func (s *ContainerdUpgradeSuite) TestContainerdUpgrade() {
 		oldPIDs = s.gatherPIDs(ctx, s.WorkerNode(0))
 	})
 
+	s.Run("add_containerd_v2_config", func() {
+		s.PutFile(s.WorkerNode(0), "/etc/k0s/containerd.d/v2.toml", "version = 2")
+	})
+
 	s.Run("upgrade_k0s_to_testing_version", func() {
 		s.Require().NoError(s.StopWorker(s.WorkerNode(0)))
 		s.upgradeContainerdToTesting(ctx, s.WorkerNode(0))
+		// k0s should exit after containerd upgrade because of the containerd v2 config
+		s.validateK0sExitAndCleanUpContainerdV2Conf(ctx, s.WorkerNode(0))
+
+		// After removing it, it should start up again
 		s.Require().NoError(s.StartWorker(s.WorkerNode(0)))
 
-		// Grace period to ensure contianerd is up and running
+		// Grace period to ensure containerd is up and running
 		time.Sleep(30 * time.Second)
 		s.Require().NoError(s.WaitForNodeReady(s.WorkerNode(0), kc))
 		s.ensureContainerdVersion(ctx, s.WorkerNode(0), "2.2")
@@ -109,6 +117,27 @@ func (s *ContainerdUpgradeSuite) TestContainerdUpgrade() {
 			return pod.Status.ContainerStatuses[0].RestartCount > 0, nil
 		}))
 	})
+}
+
+func (s *ContainerdUpgradeSuite) validateK0sExitAndCleanUpContainerdV2Conf(ctx context.Context, node string) {
+	ssh, err := s.SSH(ctx, node)
+	s.Require().NoError(err)
+	defer ssh.Disconnect()
+
+	s.T().Log("waiting for k0s process to stop")
+	err = wait.PollUntilContextCancel(ctx, 1*time.Second, false, func(ctx context.Context) (bool, error) {
+		_, err := ssh.ExecWithOutput(ctx, "pgrep /usr/local/bin/k0s")
+		if err != nil {
+			return true, nil
+		}
+		return false, nil
+	})
+	s.Require().NoError(err)
+
+	s.T().Logf("k0s process exited")
+
+	_, err = ssh.ExecWithOutput(ctx, "rm -f /etc/k0s/containerd.d/v2.toml")
+	s.Require().NoError(err)
 }
 
 func (s *ContainerdUpgradeSuite) forceKillNginx(ctx context.Context, node string) {
@@ -269,7 +298,6 @@ func (s *ContainerdUpgradeSuite) gatherPIDs(ctx context.Context, name string) ma
 func TestContainerdUpgradeSuite(t *testing.T) {
 	s := ContainerdUpgradeSuite{
 		common.BootlooseSuite{
-			LaunchMode:      common.LaunchModeOpenRC,
 			ControllerCount: 1,
 			WorkerCount:     1,
 		},

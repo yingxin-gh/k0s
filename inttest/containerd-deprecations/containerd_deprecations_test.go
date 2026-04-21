@@ -97,16 +97,6 @@ func TestContainerdDeprecationsSuite(t *testing.T) {
 	suite.Run(t, &s)
 }
 
-// TODO before 1.36: This is broken at the moment, we have to figure out
-// how to merge the configuration and revist this test.
-const deprecatedConfig = `version = 2
-
-[plugins]
-  [plugins."io.containerd.grpc.v1.cri"]
-    [plugins."io.containerd.grpc.v1.cri".registry]
-      [plugins."io.containerd.grpc.v1.cri".registry.mirrors]
-        [plugins."io.containerd.grpc.v1.cri".registry.mirrors."docker.io"]
-          endpoint = ["https://registry-1.docker.io"]
-    [plugins."io.containerd.grpc.v1.cri".cni]
-      bin_dir = "/opt/cni/bin"
-`
+// In containerd 2.2 is no configuration that can throw deprecation warnings in containerd, therefore we just
+// dump some legal file as a placeholder. In the future if deprecations are available we can update this to trigger them.
+const deprecatedConfig = "version = 3"

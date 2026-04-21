@@ -57,6 +57,7 @@ func (c *configurer) handleImports() (*resolvedConfig, error) {
 	// do, treat them as merge patches to the default config, if they don't,
 	// just add them as normal imports to be handled by containerd.
 	finalConfig := string(defaultConfig)
+	errs := []error{}
 	for _, filePath := range filePaths {
 		c.log.Debugf("Processing containerd configuration file %s", filePath)
 
@@ -65,21 +66,37 @@ func (c *configurer) handleImports() (*resolvedConfig, error) {
 			return nil, err
 		}
 
-		hasCRI, err := hasCRIPluginConfig(data)
+		tree, err := toml.LoadBytes(data)
 		if err != nil {
-			return nil, fmt.Errorf("failed to check for CRI plugin configuration in %s: %w", filePath, err)
+			errs = append(errs, fmt.Errorf("failed to parse TOML in %q: %w", filePath, err))
+			continue
 		}
 
-		if hasCRI {
-			c.log.Infof("Found CRI plugin configuration in %s, treating as merge patch", filePath)
+		isV3Config := true
+		if err := assertV3Config(tree); err != nil {
+			errs = append(errs, fmt.Errorf("invalid containerd configuration in %q: %w", filePath, err))
+			isV3Config = false
+		}
+
+		if hasV2CRIConfig(tree) {
+			errs = append(errs, fmt.Errorf("containerd configuration file %q contains v2 CRI plugin configuration, which is not compatible with k0s. Please update the configuration to use the v3 plugin format", filePath))
+			isV3Config = false
+		}
+
+		if isV3Config && hasCRIPluginConfig(tree) {
+			c.log.Infof("Found CRI plugin configuration in %q, treating as merge patch", filePath)
 			finalConfig, err = patch.TOMLString(finalConfig, patch.FilePatches(filePath))
 			if err != nil {
-				return nil, fmt.Errorf("failed to merge data from %s into containerd configuration: %w", filePath, err)
+				errs = append(errs, fmt.Errorf("failed to merge data from %s into containerd configuration: %w", filePath, err))
 			}
 		} else {
 			c.log.Debugf("No CRI plugin configuration found in %s, adding as-is to imports", filePath)
 			importPaths = append(importPaths, filePath)
 		}
+	}
+
+	if len(errs) > 0 {
+		return nil, fmt.Errorf("encountered errors while processing containerd configuration import files: %v", errs)
 	}
 
 	return &resolvedConfig{CRIConfig: finalConfig, ImportPaths: importPaths}, nil
@@ -91,7 +108,6 @@ func (c *configurer) handleImports() (*resolvedConfig, error) {
 // containerd's defaults for the CRI plugin.
 func generateDefaultCRIConfig(sandboxContainerImage string) ([]byte, error) {
 	// https://github.com/containerd/containerd/blob/main/docs/cri/config.md#full-configuration
-
 	imagesConf := map[string]any{
 		"pinned_images": map[string]any{
 			"sandbox": sandboxContainerImage,
@@ -116,11 +132,28 @@ func generateDefaultCRIConfig(sandboxContainerImage string) ([]byte, error) {
 	})
 }
 
-func hasCRIPluginConfig(data []byte) (bool, error) {
-	tree, err := toml.LoadBytes(data)
-	if err != nil {
-		return false, fmt.Errorf("failed to parse TOML: %w", err)
-	}
+func hasCRIPluginConfig(tree *toml.Tree) bool {
+	return tree.HasPath([]string{"plugins", "io.containerd.cri.v1.runtime"}) || tree.HasPath([]string{"plugins", "io.containerd.cri.v1.images"})
+}
 
-	return tree.HasPath([]string{"plugins", "io.containerd.cri.v1.runtime"}) || tree.HasPath([]string{"plugins", "io.containerd.cri.v1.images"}), nil
+// hasV2CRIConfig checks if the given containerd configuration tree contains any plugins."io.containerd.grpc.v1.cri"
+// configuration section. This is the main difference between containerd v2 and v3 configuration formats, so if this is present we
+// want the user to fix it manually instead of trying to merge it and potentially causing unexpected breakage.
+func hasV2CRIConfig(tree *toml.Tree) bool {
+	return tree.HasPath([]string{"plugins", "io.containerd.grpc.v1.cri"})
+}
+
+func assertV3Config(tree *toml.Tree) error {
+	version := tree.Get("version")
+	if version != nil {
+		v, ok := version.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type for version field: expected integer, got %T", version)
+		}
+
+		if v != 3 {
+			return fmt.Errorf("unsupported containerd configuration version: expected 3, got %d", v)
+		}
+	}
+	return nil
 }

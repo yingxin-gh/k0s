@@ -88,4 +88,43 @@ version = 3
 		assert.NoError(t, err)
 		assert.Equal(t, []string{nonCriConfigPath}, criConfig.ImportPaths)
 	})
+
+	t.Run("shouldn't return an error if version isn't explicitly defined", func(t *testing.T) {
+		importsPath := t.TempDir()
+		criRuntimeConfig := `
+[plugins]
+  [plugins."io.containerd.cri.v1.images"]
+	snapshotter = "zfs"
+`
+		err := os.WriteFile(filepath.Join(importsPath, "foo.toml"), []byte(criRuntimeConfig), 0644)
+		require.NoError(t, err)
+		c := configurer{
+			loadPath: filepath.Join(importsPath, "*.toml"),
+			log:      logrus.New().WithField("test", t.Name()),
+		}
+		criConfig, err := c.handleImports()
+		assert.NoError(t, err)
+		assert.NotNil(t, criConfig)
+	})
+
+	t.Run("should return an error if a configuration file contains v2 CRI plugin configuration", func(t *testing.T) {
+		importsPath := t.TempDir()
+		v2CRIConfig := `version = 2
+[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.foo]
+      runtime_type = "io.containerd.runc.v2"
+      [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.foo.options]
+        BinaryName = "/var/lib/k0s/bin/runfoo"`
+		err := os.WriteFile(filepath.Join(importsPath, "foo.toml"), []byte(v2CRIConfig), 0644)
+		require.NoError(t, err)
+		c := configurer{
+			loadPath: filepath.Join(importsPath, "*.toml"),
+			log:      logrus.New().WithField("test", t.Name()),
+		}
+		criConfig, err := c.handleImports()
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "unsupported containerd configuration version")
+		assert.Contains(t, err.Error(), "contains v2 CRI plugin configuration")
+		assert.Nil(t, criConfig)
+	})
+
 }
