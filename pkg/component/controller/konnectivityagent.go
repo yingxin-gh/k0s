@@ -242,8 +242,11 @@ spec:
         readOnlyRootFilesystem: true
         runAsNonRoot: true
         supplementalGroups: [0]` /* in order to read the projected service account token */ + `
-      nodeSelector:
-        kubernetes.io/os: linux
+        {{- if .HostNetwork }}
+        windowsOptions:
+          hostProcess: true
+          runAsUserName: NT AUTHORITY\Local service
+        {{- end }}
       priorityClassName: system-cluster-critical
       tolerations:
         - operator: Exists
@@ -254,7 +257,6 @@ spec:
         - image: {{ .Image }}
           imagePullPolicy: {{ .PullPolicy }}
           name: konnectivity-agent
-          command: ["/proxy-agent"]
           env:
               # the variable is not in a use
               # we need it to have agent restarted on server count change
