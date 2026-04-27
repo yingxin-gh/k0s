@@ -85,6 +85,7 @@ nav:
       - Security policy: security.md
       - Releases & support model: releases.md
       - CNCF:
+          - Kubernetes AI conformance: governance/cncf/ai-conformance.md
           - General Technical Review: governance/cncf/gtr.md
           - TAG-Security self-assessment: governance/cncf/security-self-assessment.md
   - Commercial support: commercial-support.md
