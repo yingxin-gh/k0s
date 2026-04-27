@@ -152,39 +152,24 @@ func (s *DualstackSuite) SetupSuite() {
 	s.Require().NoError(err)
 	s.NoError(common.WaitForPod(s.Context(), kc, "nginx-worker1", metav1.NamespaceDefault), "nginx-worker1 pod did not start")
 
-	// test ipv6 address
-	err = wait.PollImmediateWithContext(s.Context(), 100*time.Millisecond, time.Minute, func(ctx context.Context) (done bool, err error) {
-		s.Require().Len(targetPod.Status.PodIPs, 2)
-		podIP := targetPod.Status.PodIPs[1].IP
-		targetIP := net.ParseIP(podIP)
-		s.Require().NotNil(targetIP)
-		out, err := common.PodExecCmdOutput(kc, restConfig, sourcePod.Name, sourcePod.Namespace, fmt.Sprintf("/usr/bin/wget -qO- [%s]", targetIP))
-		s.T().Log(out, err)
-		if err != nil {
-			s.T().Log("error calling ipv6 address: ", err)
-			return false, nil
-		}
-		s.T().Log("server response", out)
-		return strings.Contains(out, "Welcome to nginx"), nil
-	})
-	s.Require().NoError(err)
+	// test both ipv4 and ipv6 addresses
+	podIPs := map[string]string{}
+	podIPs["ipv4"], podIPs["ipv6"] = s.getPodIPs(targetPod)
+	for ipVersion, podIP := range podIPs {
+		err := wait.PollUntilContextTimeout(s.Context(), 100*time.Millisecond, time.Minute, true, func(ctx context.Context) (done bool, err error) {
+			target := net.JoinHostPort(podIP, "80")
+			out, err := common.PodExecCmdOutput(kc, restConfig, sourcePod.Name, sourcePod.Namespace, "/usr/bin/wget -qO- http://"+target)
+			s.T().Logf("Trying to access %s address %s: %s", ipVersion, target, out)
+			if err != nil {
+				s.T().Logf("error calling %s address: %v", ipVersion, err)
+				return false, nil
+			}
+			s.T().Logf("server response from %s address: %s", ipVersion, out)
+			return strings.Contains(out, "Welcome to nginx"), nil
+		})
+		s.Require().NoErrorf(err, "failed to access nginx server via %s address", ipVersion)
+	}
 
-	// test ipv4 address
-	err = wait.PollImmediateWithContext(s.Context(), 100*time.Millisecond, time.Minute, func(ctx context.Context) (done bool, err error) {
-		s.Require().Len(targetPod.Status.PodIPs, 2)
-		podIP := targetPod.Status.PodIPs[0].IP
-		targetIP := net.ParseIP(podIP)
-		s.Require().NotNil(targetIP)
-		out, err := common.PodExecCmdOutput(kc, restConfig, sourcePod.Name, sourcePod.Namespace, fmt.Sprintf("/usr/bin/wget -qO- %s", targetIP))
-		s.T().Log(out, err)
-		if err != nil {
-			s.T().Log("error calling ipv4 address: ", err)
-			return false, nil
-		}
-		s.T().Log("server response", out)
-		return strings.Contains(out, "Welcome to nginx"), nil
-	})
-	s.Require().NoError(err)
 	s.client = client
 
 	s.T().Log("Validate the kube-dns service address")
@@ -198,6 +183,19 @@ func (s *DualstackSuite) SetupSuite() {
 	for _, err := range common.VerifyNoRestartedPods(s.Context(), client) {
 		s.NoError(err)
 	}
+}
+
+func (s *DualstackSuite) getPodIPs(pod *corev1.Pod) (string, string) {
+	s.Require().Len(pod.Status.PodIPs, 2)
+	ipv4, ipv6 := pod.Status.PodIPs[0].IP, pod.Status.PodIPs[1].IP
+	if s.defaultIPv6 {
+		ipv4, ipv6 = pod.Status.PodIPs[1].IP, pod.Status.PodIPs[0].IP
+	}
+	s.Require().NotNil(net.ParseIP(ipv4).To4(), "pod has an unexpected non IPv4 address %q", ipv4)
+	s.Require().Nil(net.ParseIP(ipv6).To4(), "pod has an unexpected IPv4 address %q", ipv6)
+	s.Require().NotNil(net.ParseIP(ipv6).To16(), "pod has an unexpected non IPv6 address %q", ipv6)
+
+	return ipv4, ipv6
 }
 
 func (s *DualstackSuite) validateKubeDNSIP(client *k8s.Clientset) {

@@ -482,7 +482,7 @@ func (c *ClusterConfig) Validate() (errs []error) {
 // - Network.PrimaryAddressFamily
 // - Install
 func (c *ClusterConfig) GetClusterWideConfig() *ClusterConfig {
-	primaryAF := c.PrimaryAddressFamily()
+	primaryAF := c.Spec.PrimaryAddressFamily()
 	c = c.DeepCopy()
 	if c != nil && c.Spec != nil {
 		c.Spec.API = nil
@@ -508,9 +508,9 @@ func (c *ClusterConfig) CRValidator() *ClusterConfig {
 	return copy
 }
 
-func (c *ClusterConfig) PrimaryAddressFamily() PrimaryAddressFamilyType {
-	if c != nil && c.Spec != nil && c.Spec.Network != nil && c.Spec.Network.PrimaryAddressFamily != PrimaryFamilyUnknown {
-		return c.Spec.Network.PrimaryAddressFamily
+func (s *ClusterSpec) PrimaryAddressFamily() PrimaryAddressFamilyType {
+	if s != nil && s.Network != nil && s.Network.PrimaryAddressFamily != PrimaryFamilyUnknown {
+		return s.Network.PrimaryAddressFamily
 	}
-	return c.Spec.API.DetectPrimaryAddressFamily()
+	return s.API.DetectPrimaryAddressFamily()
 }

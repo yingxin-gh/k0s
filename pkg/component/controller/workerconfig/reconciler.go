@@ -49,12 +49,13 @@ type resources = []*unstructured.Unstructured
 type Reconciler struct {
 	log logrus.FieldLogger
 
-	clusterDomain       string
-	clusterDNSIP        net.IP
-	clientFactory       kubeutil.ClientFactoryInterface
-	leaderElector       leaderelector.Interface
-	konnectivityEnabled bool
-	autopilotDisabled   bool
+	clusterDomain        string
+	clusterDNSIP         net.IP
+	clientFactory        kubeutil.ClientFactoryInterface
+	leaderElector        leaderelector.Interface
+	konnectivityEnabled  bool
+	autopilotDisabled    bool
+	primaryAddressFamily v1beta1.PrimaryAddressFamilyType
 
 	mu    sync.Mutex
 	state reconcilerState
@@ -86,7 +87,7 @@ var (
 func NewReconciler(k0sVars *config.CfgVars, nodeConfig *v1beta1.ClusterConfig, clientFactory kubeutil.ClientFactoryInterface, leaderElector leaderelector.Interface, konnectivityEnabled, autopilotDisabled bool) (*Reconciler, error) {
 	log := logrus.WithFields(logrus.Fields{"component": "workerconfig.Reconciler"})
 
-	clusterDNSIPString, err := nodeConfig.Spec.Network.DNSAddress(nodeConfig.PrimaryAddressFamily())
+	clusterDNSIPString, err := nodeConfig.Spec.Network.DNSAddress(nodeConfig.Spec.PrimaryAddressFamily())
 	if err != nil {
 		return nil, err
 	}
@@ -98,12 +99,13 @@ func NewReconciler(k0sVars *config.CfgVars, nodeConfig *v1beta1.ClusterConfig, c
 	reconciler := &Reconciler{
 		log: log,
 
-		clusterDomain:       nodeConfig.Spec.Network.ClusterDomain,
-		clusterDNSIP:        clusterDNSIP,
-		clientFactory:       clientFactory,
-		leaderElector:       leaderElector,
-		konnectivityEnabled: konnectivityEnabled,
-		autopilotDisabled:   autopilotDisabled,
+		clusterDomain:        nodeConfig.Spec.Network.ClusterDomain,
+		clusterDNSIP:         clusterDNSIP,
+		clientFactory:        clientFactory,
+		leaderElector:        leaderElector,
+		konnectivityEnabled:  konnectivityEnabled,
+		autopilotDisabled:    autopilotDisabled,
+		primaryAddressFamily: nodeConfig.Spec.PrimaryAddressFamily(),
 
 		state: reconcilerCreated,
 	}
@@ -604,8 +606,9 @@ func (r *Reconciler) buildProfile(snapshot *snapshot) *workerconfig.Profile {
 			Enabled:   r.konnectivityEnabled,
 			AgentPort: snapshot.konnectivityAgentPort,
 		},
-		DualStackEnabled:  snapshot.dualStackEnabled,
-		AutopilotDisabled: r.autopilotDisabled,
+		DualStackEnabled:     snapshot.dualStackEnabled,
+		AutopilotDisabled:    r.autopilotDisabled,
+		PrimaryAddressFamily: snapshot.primaryAddressFamily,
 	}
 
 	if workerProfile.NodeLocalLoadBalancing != nil &&

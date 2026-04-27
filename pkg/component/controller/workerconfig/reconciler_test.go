@@ -356,6 +356,7 @@ func TestReconciler_ResourceGeneration(t *testing.T) {
 						APIServerBindPort: 1337,
 					},
 				},
+				PrimaryAddressFamily: v1beta1.PrimaryFamilyIPv4,
 			},
 			Images: &v1beta1.ClusterImages{
 				DefaultPullPolicy: string(corev1.PullNever),
