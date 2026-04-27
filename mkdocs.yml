@@ -32,6 +32,7 @@ nav:
 # ~~~ END NAV SNIPPET ~~~
   - Maintenance:
       - Upgrade: upgrade.md
+      - Version skew policy: version-skew-policy.md
       - Backup/Restore: backup.md
       - Remove/Replace a controller: remove_controller.md
       - Reset (Uninstall): reset.md
