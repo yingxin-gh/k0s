@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2023 k0s authors
+SPDX-License-Identifier: CC-BY-SA-4.0
+-->
+
 # OpenTofu modules for k0s OS testing
 
 Provisioning of k0s test clusters using different operating system stacks and

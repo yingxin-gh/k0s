@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2025 k0s authors
+SPDX-License-Identifier: CC-BY-SA-4.0
+-->
+
 # k0s roadmap
 
 k0s maintainers work in a KanBan-ish style, with a [public board] available defining the roadmap items. As always, a roadmap is a living entity and subject to change based on user feedback, maintainer interests, and other factors.

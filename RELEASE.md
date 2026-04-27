@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2020 k0s authors
+SPDX-License-Identifier: CC-BY-SA-4.0
+-->
+
 # Releasing k0s
 
 We try to follow the practice of releasing often. That allows us to have smaller releases and thus, hopefully, we'll also break less things while doing so.

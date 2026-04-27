@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2024 k0s authors
+SPDX-License-Identifier: CC-BY-SA-4.0
+-->
+
 # Adopters of k0s
 
 This page lists, in alphabetical order, individuals and organizations that are

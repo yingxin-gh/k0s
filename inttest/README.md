@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2020 k0s authors
+SPDX-License-Identifier: CC-BY-SA-4.0
+-->
+
 # Integration tests a.k.a e2e testing
 
 This folder is the root of k0s integration tests. These tests are such that run the actual k0s clusters, currently using [bootloose](https://github.com/k0sproject/bootloose) as the target environment.

@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2024 k0s authors
+SPDX-License-Identifier: CC-BY-SA-4.0
+-->
+
 # k0s maintainers
 
 We're currently working on providing more detailed project governance documentation for k0s. This file documents the current maintainers and their affiliation.

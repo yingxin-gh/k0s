@@ -128,7 +128,7 @@ jobs:
         run: make codegen && git diff --exit-code
 
       - name: Check copyright headers
-        run: make lint-copyright
+        run: WHAT=code make lint-copyright
 
   validate-os-tests:
     name: Validate OS tests
