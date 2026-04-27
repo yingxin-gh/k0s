@@ -36,6 +36,7 @@ nav:
       - Backup/Restore: backup.md
       - Remove/Replace a controller: remove_controller.md
       - Reset (Uninstall): reset.md
+      - Directories: directories.md
   - Usage:
       - Configuration Options: configuration.md
       - Dynamic Configuration: dynamic-configuration.md
