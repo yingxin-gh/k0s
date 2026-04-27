@@ -120,8 +120,7 @@ jobs:
     uses: ./.github/workflows/build-image-bundle.yml
     with:
       image-bundle-name: airgap
-      target-os: linux
-      target-arch: ${{ matrix.target-arch }}
+      image-bundle-platform: linux-${{ matrix.target-arch }}
 
   build-ipv6-test-image-bundle:
     name: "Build :: IPv6 test image bundle"
@@ -129,8 +128,7 @@ jobs:
     uses: ./.github/workflows/build-image-bundle.yml
     with:
       image-bundle-name: ipv6-test
-      target-os: linux
-      target-arch: amd64
+      image-bundle-platform: linux-amd64
 
   submit-sbom:
     name: "Submit :: SBOM"
@@ -358,15 +356,15 @@ jobs:
         run: make check-unit
 
       - name: Create airgap image list
-        run: make airgap-images.txt
+        run: make airgap-images-linux-arm.txt
 
       - name: Cache airgap image bundle
         id: cache-airgap-image-bundle
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
-          key: airgap-image-bundle-linux-arm-${{ hashFiles('Makefile', 'airgap-images.txt', 'cmd/airgap/*', 'pkg/airgap/*') }}
+          key: airgap-image-bundle-linux-arm-${{ hashFiles('Makefile', 'airgap-images-linux-arm.txt', 'cmd/airgap/*', 'pkg/airgap/*') }}
           path: |
-            airgap-images.txt
+            airgap-images-linux-arm.txt
             airgap-image-bundle-linux-arm.tar
 
       - name: Create airgap image bundle if not cached

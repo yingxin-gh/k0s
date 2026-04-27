@@ -112,26 +112,42 @@ jobs:
           path: spdx.json
 
       - name: "Build :: Airgap image list"
-        if: inputs.target-os != 'windows'
-        run: make airgap-images.txt && cat airgap-images.txt
+        id: build-airgap-image-list
+        env:
+          TARGET_OS: ${{ inputs.target-os }}
+          TARGET_ARCH: ${{ inputs.target-arch }}
+        run: |
+          target=$TARGET_OS-$TARGET_ARCH
+          if [ $TARGET_OS = windows ]; then
+            target=windows2022-$TARGET_ARCH
+          fi
+          target=airgap-images-$target.txt
+          make $target && cat $target
+          echo file-name="$target" >>"$GITHUB_OUTPUT"
 
       - name: "Upload :: Airgap image list"
-        if: inputs.target-os != 'windows'
         uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
-          name: airgap-image-list-${{ inputs.target-os }}-${{ inputs.target-arch }}
-          path: airgap-images.txt
+          name: ${{ steps.build-airgap-image-list.outputs.file-name }}
+          path: ${{ steps.build-airgap-image-list.outputs.file-name }}
 
       - name: "Build :: IPv6 test image list"
-        if: inputs.target-os != 'windows'
-        run: make ipv6-test-images.txt && cat ipv6-test-images.txt
+        id: build-ipv6-test-image-list
+        if: inputs.target-os == 'linux' && (inputs.target-arch == 'amd64' || inputs.target-arch == 'arm64')
+        env:
+          TARGET_OS: ${{ inputs.target-os }}
+          TARGET_ARCH: ${{ inputs.target-arch }}
+        run: |
+          target=ipv6-test-images-$TARGET_OS-$TARGET_ARCH.txt
+          make $target && cat $target
+          echo file-name="$target" >>"$GITHUB_OUTPUT"
 
       - name: "Upload :: IPv6 test image list"
-        if: inputs.target-os != 'windows'
+        if: steps.build-ipv6-test-image-list.outcome == 'success'
         uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
-          name: ipv6-test-image-list-${{ inputs.target-os }}-${{ inputs.target-arch }}
-          path: ipv6-test-images.txt
+          name: ${{ steps.build-ipv6-test-image-list.outputs.file-name }}
+          path: ${{ steps.build-ipv6-test-image-list.outputs.file-name }}
 
       - name: "Cache :: Go cache :: Trim"
         if: steps.cache-gocache.outputs.cache-hit

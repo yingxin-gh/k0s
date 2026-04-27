@@ -299,21 +299,39 @@ lint-go: $(GO_ENV_REQUISITES) go.sum
 .PHONY: lint
 lint: lint-copyright lint-go
 
-airgap-images.txt: k0s $(GO_ENV_REQUISITES)
-	$(GO_ENV) ./k0s airgap list-images --all > '$@'
+airgap-images-linux-amd64.txt airgap-image-bundle-linux-amd64.tar:             TARGET_PLATFORM := linux/amd64
+airgap-images-linux-arm64.txt airgap-image-bundle-linux-arm64.tar:             TARGET_PLATFORM := linux/arm64
+airgap-images-linux-arm.txt airgap-image-bundle-linux-arm.tar:                 TARGET_PLATFORM := linux/arm/v7
+airgap-images-linux-riscv64.txt airgap-image-bundle-linux-riscv64.tar:         TARGET_PLATFORM := linux/riscv64
+airgap-images-windows2022-amd64.txt airgap-image-bundle-windows2022-amd64.tar: TARGET_PLATFORM := windows(10.0.20348)/amd64
 
-airgap-image-bundle-linux-amd64.tar:   TARGET_PLATFORM := linux/amd64
-airgap-image-bundle-linux-arm64.tar:   TARGET_PLATFORM := linux/arm64
-airgap-image-bundle-linux-arm.tar:     TARGET_PLATFORM := linux/arm/v7
-airgap-image-bundle-linux-riscv64.tar: TARGET_PLATFORM := linux/riscv64
+airgap-images-linux-amd64.txt \
+airgap-images-linux-arm64.txt \
+airgap-images-linux-arm.txt \
+airgap-images-linux-riscv64.txt \
+airgap-images-windows2022-amd64.txt: k0s $(GO_ENV_REQUISITES)
+	$(GO_ENV) ./k0s airgap list-images --all --platform='$(TARGET_PLATFORM)' > '$@'
+
+airgap-image-bundle-linux-amd64.tar:       airgap-images-linux-amd64.txt
+airgap-image-bundle-linux-arm64.tar:       airgap-images-linux-arm64.txt
+airgap-image-bundle-linux-arm.tar:         airgap-images-linux-arm.txt
+airgap-image-bundle-linux-riscv64.tar:     airgap-images-linux-riscv64.txt
+airgap-image-bundle-windows2022-amd64.tar: airgap-images-windows2022-amd64.txt
+
 airgap-image-bundle-linux-amd64.tar \
 airgap-image-bundle-linux-arm64.tar \
 airgap-image-bundle-linux-arm.tar \
-airgap-image-bundle-linux-riscv64.tar: k0s airgap-images.txt
-	set -- $$(cat airgap-images.txt) && \
+airgap-image-bundle-linux-riscv64.tar \
+airgap-image-bundle-windows2022-amd64.tar: k0s
+	set -- $$(cat -- '$(@:airgap-image-bundle-%.tar=airgap-images-%.txt)') && \
 	$(GO_ENV) ./k0s airgap bundle-artifacts --concurrency=1 -v --platform='$(TARGET_PLATFORM)' -o '$@' "$$@"
+	chmod a+r -- '$@'
 
-ipv6-test-images.txt: $(GO_ENV_REQUISITES) embedded-bins/Makefile.variables hack/gen-test-images-list/main.go
+ipv6-test-images-linux-amd64.txt ipv6-test-image-bundle-linux-amd64.tar: TARGET_PLATFORM := linux/amd64
+ipv6-test-images-linux-arm64.txt ipv6-test-image-bundle-linux-arm64.tar: TARGET_PLATFORM := linux/arm64
+
+ipv6-test-images-linux-amd64.txt \
+ipv6-test-images-linux-arm64.txt: $(GO_ENV_REQUISITES) embedded-bins/Makefile.variables hack/gen-test-images-list/main.go
 	{ \
 	  echo "docker.io/library/nginx:1.30.0-alpine"; \
 	  echo "docker.io/curlimages/curl:8.19.0"; \
@@ -323,24 +341,26 @@ ipv6-test-images.txt: $(GO_ENV_REQUISITES) embedded-bins/Makefile.variables hack
 	  $(GO) run -tags=hack ./hack/gen-test-images-list; \
 	} >'$@'
 
-ipv6-test-image-bundle-linux-amd64.tar:   TARGET_PLATFORM := linux/amd64
-ipv6-test-image-bundle-linux-arm64.tar:   TARGET_PLATFORM := linux/arm64
-ipv6-test-image-bundle-linux-arm.tar:     TARGET_PLATFORM := linux/arm/v7
-ipv6-test-image-bundle-linux-riscv64.tar: TARGET_PLATFORM := linux/riscv64
+ipv6-test-image-bundle-linux-amd64.tar: ipv6-test-images-linux-amd64.txt
+ipv6-test-image-bundle-linux-arm64.tar: ipv6-test-images-linux-arm64.txt
+
 ipv6-test-image-bundle-linux-amd64.tar \
-ipv6-test-image-bundle-linux-arm64.tar \
-ipv6-test-image-bundle-linux-arm.tar \
-ipv6-test-image-bundle-linux-riscv64.tar: k0s ipv6-test-images.txt
-	set -- $$(cat ipv6-test-images.txt) && \
+ipv6-test-image-bundle-linux-arm64.tar: k0s
+	set -- $$(cat -- '$(@:ipv6-test-image-bundle-%.tar=ipv6-test-images-%.txt)') && \
 	$(GO_ENV) ./k0s airgap bundle-artifacts -v --platform='$(TARGET_PLATFORM)' -o '$@' "$$@"
 
 .PHONY: $(smoketests)
 $(air_gapped_smoketests) $(ipv6_smoketests): airgap-image-bundle-linux-$(HOST_ARCH).tar
+
+ifneq ($(filter amd64 arm64,$(HOST_ARCH)),)
 $(ipv6_smoketests): ipv6-test-image-bundle-linux-$(HOST_ARCH).tar
+IPV6_TEST_IMAGE_BUNDLE := $(CURDIR)/ipv6-test-image-bundle-linux-$(HOST_ARCH).tar
+endif
+
 $(smoketests): k0s
 	$(MAKE) -C inttest \
 		K0S_IMAGES_BUNDLE='$(CURDIR)/airgap-image-bundle-linux-$(HOST_ARCH).tar' \
-		K0S_EXTRA_IMAGES_BUNDLE='$(CURDIR)/ipv6-test-image-bundle-linux-$(HOST_ARCH).tar' \
+		K0S_EXTRA_IMAGES_BUNDLE='$(IPV6_TEST_IMAGE_BUNDLE)' \
 		$@
 
 .PHONY: smoketests
@@ -366,13 +386,15 @@ clean-docker-image: IID_FILES = .k0sbuild.docker-image.k0s
 clean-docker-image:
 	$(clean-iid-files)
 
-.PHONY: clean-airgap-image-bundles
-clean-airgap-image-bundles:
-	-rm airgap-images.txt
-	-rm airgap-image-bundle-linux-amd64.tar airgap-image-bundle-linux-arm64.tar airgap-image-bundle-linux-arm.tar  airgap-image-bundle-linux-riscv64.tar
+.PHONY: clean-image-bundles
+clean-image-bundles:
+	for plat in linux-amd64 linux-arm64 linux-arm linux-riscv64 windows2022-amd64; do \
+	  rm -f airgap-images-$$plat.txt airgap-image-bundle-$$plat.tar; \
+	  rm -f ipv6-test-images-$$plat.txt ipv6-test-image-bundle-$$plat.tar; \
+	done
 
 .PHONY: clean
-clean: clean-gocache clean-docker-image clean-airgap-image-bundles
+clean: clean-gocache clean-docker-image clean-image-bundles
 	-rm -f k0s k0s.exe k0s.bare k0s.bare.exe .bins.*stamp
 	-rm -f embedded-binaries-linux.zip embedded-binaries-windows.zip
 	-rm -rf $(K0S_GO_BUILD_CACHE)
