@@ -37,11 +37,11 @@ written with mode `0600`.
 
 Inside `<run-dir>` (default `/run/k0s`):
 
-| Path                  | Purpose                                                              | Mode   |
-| --------------------- | -------------------------------------------------------------------- | ------ |
-| `<run-dir>/`          | Top-level run directory.                                             | `0755` |
-| `<run-dir>/*.pid`     | PID files for supervised processes (kubelet, etcd, containerd, …).   | `0644` |
-| `<run-dir>/status.sock` | Unix socket exposing local status to `k0s status` and similar commands. | varies |
+| Path                    | Purpose                                                                 | Mode     |
+| ----------------------- | ----------------------------------------------------------------------- | -------- |
+| `<run-dir>/`            | Top-level run directory.                                                | `0755`   |
+| `<run-dir>/*.pid`       | PID files for supervised processes (kubelet, etcd, containerd, …).      | `0644`   |
+| `<run-dir>/status.sock` | Unix socket exposing local status to `k0s status` and similar commands. | varies   |
 
 The run directory is intentionally outside the data directory so that on
 systems where `/run` is a tmpfs, runtime state is cleared on reboot while
