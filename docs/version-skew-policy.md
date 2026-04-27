@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2026 k0s authors
+SPDX-License-Identifier: CC-BY-SA-4.0
+-->
+
 # Version skew policy
 
 k0s ships a curated set of Kubernetes components (kube-apiserver,

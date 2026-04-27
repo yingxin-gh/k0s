@@ -7,6 +7,7 @@ set -eu
 
 RESULT=0
 FIX=${FIX:=n}
+WHAT=${WHAT:=all}
 
 get_year(){
     # The -1 has to be added because if a file has been added, removed and added
@@ -31,10 +32,19 @@ has_date_copyright(){
 }
 
 find_files_to_check() {
+    case "$WHAT" in
     # All the Go files
-    find cmd hack internal inttest pkg static -type f -name '*.go' -not -name 'zz_generated*'
+    all | code)
+        find cmd hack internal inttest pkg static -type f -name '*.go' -not -name 'zz_generated*'
+        ;;
+    esac
+
+    case "$WHAT" in
     # All the markdown documentation, excluding the auto-generated CLI docs
-    find docs -type f -name '*.md' -not -path 'docs/cli/*'
+    all | docs)
+        git ls-files '*.md'
+        ;;
+    esac
 }
 
 for i in $(find_files_to_check); do

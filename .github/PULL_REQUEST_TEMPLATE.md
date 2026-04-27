@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2022 k0s authors
+SPDX-License-Identifier: CC-BY-SA-4.0
+-->
+
 ## Description
 
 <!-- Please include a summary of the change and which issue is fixed. Please also include relevant motivation and context. List any dependencies that are required for this change. -->
