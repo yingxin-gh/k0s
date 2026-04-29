@@ -388,7 +388,7 @@ func retry(ctx context.Context, errorCallback ErrorCallback, runWatch func(conte
 
 		if ctx.Err() != nil {
 			// The context has been closed. Good bye.
-			return err
+			return context.Cause(ctx)
 		}
 
 		if apierrors.IsResourceExpired(err) {

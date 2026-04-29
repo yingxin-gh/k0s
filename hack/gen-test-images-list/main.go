@@ -13,7 +13,7 @@ import (
 func main() {
 	for _, id := range []imageutils.ImageID{
 		imageutils.Agnhost,
-		imageutils.JessieDnsutils,
+		imageutils.GlibcDnsTesting,
 		imageutils.Nginx,
 		imageutils.Pause,
 	} {

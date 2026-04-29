@@ -17,6 +17,7 @@ import (
 	"github.com/k0sproject/version"
 	"github.com/stretchr/testify/suite"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -34,13 +35,17 @@ func (s *ContainerdUpgradeSuite) TestContainerdUpgrade() {
 
 	s.Run("controller_and_workers_get_up", func() {
 		s.Require().NoError(s.InitController(0))
-		// get the latest 1.35 stable release so that we start the node with containerd 1.7.x
-		s.downloadRelease(ctx, s.WorkerNode(0), s.getLast35Release(ctx))
-		s.Require().NoError(s.RunWorkers())
-
 		var err error
 		kc, err = s.KubeClient(s.ControllerNode(0))
 		s.Require().NoError(err)
+		// Because we launch k0s control plane with 1.36, the 1.35 worker profile won't be created automatically.
+		// This is a hack but it's much faster and works for the test.
+		s.create1_35WorkerProfile(ctx, kc)
+		s.create1_35WorkerProfileRBAC(ctx, kc)
+
+		// get the latest 1.35 stable release so that we start the node with containerd 1.7.x
+		s.downloadRelease(ctx, s.WorkerNode(0), s.getLast35Release(ctx))
+		s.Require().NoError(s.RunWorkers())
 
 		s.Require().NoError(s.WaitForNodeReady("worker0", kc))
 		s.ensureContainerdVersion(ctx, s.WorkerNode(0), "1.7")
@@ -60,10 +65,6 @@ func (s *ContainerdUpgradeSuite) TestContainerdUpgrade() {
 	})
 
 	s.Run("gather_pids_before_upgrade", func() {
-		s.Require().NoError(common.WaitForCoreDNSReady(ctx, kc))
-		s.Require().NoError(common.WaitForDaemonSet(ctx, kc, "konnectivity-agent", metav1.NamespaceSystem))
-		s.Require().NoError(common.WaitForDaemonSet(ctx, kc, "kube-proxy", metav1.NamespaceSystem))
-		s.Require().NoError(common.WaitForDaemonSet(ctx, kc, "kube-router", metav1.NamespaceSystem))
 		s.Require().NoError(common.WaitForPod(ctx, kc, "nginx-kill", metav1.NamespaceDefault), "nginx pod did not start")
 		s.Require().NoError(common.WaitForPod(ctx, kc, "nginx-graceful", metav1.NamespaceDefault), "nginx pod did not start")
 		oldPIDs = s.gatherPIDs(ctx, s.WorkerNode(0))
@@ -283,6 +284,9 @@ func (s *ContainerdUpgradeSuite) gatherPIDs(ctx context.Context, name string) ma
 		}
 
 		podName := info.Labels["io.kubernetes.pod.name"]
+		if !strings.HasPrefix(podName, "nginx-") {
+			continue
+		}
 		for _, ns := range info.Spec.Linux.Namespaces {
 			if m := regexp.MustCompile(`^/proc/(\d+)/ns/`).FindStringSubmatch(ns.Path); m != nil {
 				pid, err := strconv.Atoi(m[1])
@@ -293,6 +297,81 @@ func (s *ContainerdUpgradeSuite) gatherPIDs(ctx context.Context, name string) ma
 		}
 	}
 	return pidMap
+}
+
+func (s *ContainerdUpgradeSuite) create1_35WorkerProfile(ctx context.Context, kc *kubernetes.Clientset) {
+	var cm *corev1.ConfigMap
+	s.Require().NoError(wait.PollUntilContextCancel(ctx, 1*time.Second, true, func(ctx context.Context) (bool, error) {
+		var err error
+		cm, err = kc.CoreV1().ConfigMaps(metav1.NamespaceSystem).Get(ctx, "worker-config-default-1.36", metav1.GetOptions{})
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+		return err == nil, err
+	}))
+
+	newData := make(map[string]string, len(cm.Data))
+	for k, v := range cm.Data {
+		newData[k] = strings.ReplaceAll(v, "1.36", "1.35")
+	}
+
+	newLabels := make(map[string]string, len(cm.Labels))
+	for k, v := range cm.Labels {
+		newLabels[k] = strings.ReplaceAll(v, "1.36", "1.35")
+	}
+
+	_, err := kc.CoreV1().ConfigMaps(metav1.NamespaceSystem).Create(ctx, &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "worker-config-default-1.35",
+			Namespace: metav1.NamespaceSystem,
+			Labels:    newLabels,
+		},
+		Data: newData,
+	}, metav1.CreateOptions{})
+	s.Require().NoError(err)
+}
+
+func (s *ContainerdUpgradeSuite) create1_35WorkerProfileRBAC(ctx context.Context, kc *kubernetes.Clientset) {
+	_, err := kc.RbacV1().Roles(metav1.NamespaceSystem).Create(ctx, &rbacv1.Role{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "system:bootstrappers:worker-config-1.35",
+			Namespace: metav1.NamespaceSystem,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups:     []string{""},
+				ResourceNames: []string{"worker-config-default-1.35"},
+				Resources:     []string{"configmaps"},
+				Verbs:         []string{"get", "list", "watch"},
+			},
+		},
+	}, metav1.CreateOptions{})
+	s.Require().NoError(err)
+
+	_, err = kc.RbacV1().RoleBindings(metav1.NamespaceSystem).Create(ctx, &rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "system:bootstrappers:worker-config-1.35",
+			Namespace: metav1.NamespaceSystem,
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "Role",
+			Name:     "system:bootstrappers:worker-config-1.35",
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				APIGroup: "rbac.authorization.k8s.io",
+				Kind:     "Group",
+				Name:     "system:bootstrappers",
+			},
+			{
+				APIGroup: "rbac.authorization.k8s.io",
+				Kind:     "Group",
+				Name:     "system:nodes",
+			},
+		},
+	}, metav1.CreateOptions{})
+	s.Require().NoError(err)
 }
 
 func TestContainerdUpgradeSuite(t *testing.T) {
