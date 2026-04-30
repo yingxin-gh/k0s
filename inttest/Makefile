@@ -89,8 +89,12 @@ check-kubeletcertrotate: TIMEOUT=15m
 
 check-network-conformance-calico: TIMEOUT=15m
 check-network-conformance-calico-nft: TIMEOUT=15m
+check-network-conformance-calico-ipv6: TIMEOUT=15m
+check-network-conformance-calico-ipv6-nft: TIMEOUT=15m
 check-network-conformance-kuberouter: TIMEOUT=15m
 check-network-conformance-kuberouter-nft: TIMEOUT=15m
+check-network-conformance-kuberouter-ipv6: TIMEOUT=15m
+check-network-conformance-kuberouter-ipv6-nft: TIMEOUT=15m
 
 check-nllb: TIMEOUT=15m
 check-nllb-ipv6: TIMEOUT=15m
