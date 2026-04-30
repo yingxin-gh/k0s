@@ -1,10 +1,10 @@
 ---
-# Source: https://github.com/projectcalico/calico/blob/v3.31.5/libcalico-go/config/crd/crd.projectcalico.org_globalnetworkpolicies.yaml
+# Source: https://github.com/projectcalico/calico/blob/v3.32.0/libcalico-go/config/crd/crd.projectcalico.org_globalnetworkpolicies.yaml
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.3
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: globalnetworkpolicies.crd.projectcalico.org
 spec:
   group: crd.projectcalico.org
@@ -36,6 +36,11 @@ spec:
                   items:
                     properties:
                       action:
+                        enum:
+                          - Allow
+                          - Deny
+                          - Log
+                          - Pass
                         type: string
                       destination:
                         properties:
@@ -45,6 +50,7 @@ spec:
                             items:
                               type: string
                             type: array
+                            x-kubernetes-list-type: set
                           notNets:
                             items:
                               type: string
@@ -75,6 +81,7 @@ spec:
                                 items:
                                   type: string
                                 type: array
+                                x-kubernetes-list-type: set
                               selector:
                                 type: string
                             type: object
@@ -91,25 +98,40 @@ spec:
                           methods:
                             items:
                               type: string
+                            maxItems: 20
                             type: array
                           paths:
                             items:
                               properties:
                                 exact:
+                                  maxLength: 1024
                                   type: string
                                 prefix:
+                                  maxLength: 1024
                                   type: string
                               type: object
+                            maxItems: 20
                             type: array
                         type: object
                       icmp:
                         properties:
                           code:
+                            maximum: 255
+                            minimum: 0
                             type: integer
                           type:
+                            maximum: 254
+                            minimum: 0
                             type: integer
                         type: object
+                        x-kubernetes-validations:
+                          - message: ICMP code specified without an ICMP type
+                            reason: FieldValueInvalid
+                            rule: "!has(self.code) || has(self.type)"
                       ipVersion:
+                        enum:
+                          - 4
+                          - 6
                         type: integer
                       metadata:
                         properties:
@@ -121,10 +143,18 @@ spec:
                       notICMP:
                         properties:
                           code:
+                            maximum: 255
+                            minimum: 0
                             type: integer
                           type:
+                            maximum: 254
+                            minimum: 0
                             type: integer
                         type: object
+                        x-kubernetes-validations:
+                          - message: ICMP code specified without an ICMP type
+                            reason: FieldValueInvalid
+                            rule: "!has(self.code) || has(self.type)"
                       notProtocol:
                         anyOf:
                           - type: integer
@@ -145,6 +175,7 @@ spec:
                             items:
                               type: string
                             type: array
+                            x-kubernetes-list-type: set
                           notNets:
                             items:
                               type: string
@@ -175,6 +206,7 @@ spec:
                                 items:
                                   type: string
                                 type: array
+                                x-kubernetes-list-type: set
                               selector:
                                 type: string
                             type: object
@@ -189,11 +221,32 @@ spec:
                     required:
                       - action
                     type: object
+                    x-kubernetes-validations:
+                      - message: rules with HTTP match must have protocol TCP or unset
+                        reason: FieldValueInvalid
+                        rule:
+                          "!has(self.http) || !has(self.protocol) || self.protocol
+                          == 'TCP' || self.protocol == 6"
+                      - message: HTTP match is only valid on Allow rules
+                        reason: FieldValueForbidden
+                        rule: self.action == 'Allow' || !has(self.http)
+                      - message: ports and notPorts cannot be specified with services
+                        reason: FieldValueForbidden
+                        rule:
+                          "!has(self.destination) || !has(self.destination.services)
+                          || (!has(self.destination.ports) || size(self.destination.ports)
+                          == 0) && (!has(self.destination.notPorts) || size(self.destination.notPorts)
+                          == 0)"
                   type: array
                 ingress:
                   items:
                     properties:
                       action:
+                        enum:
+                          - Allow
+                          - Deny
+                          - Log
+                          - Pass
                         type: string
                       destination:
                         properties:
@@ -203,6 +256,7 @@ spec:
                             items:
                               type: string
                             type: array
+                            x-kubernetes-list-type: set
                           notNets:
                             items:
                               type: string
@@ -233,6 +287,7 @@ spec:
                                 items:
                                   type: string
                                 type: array
+                                x-kubernetes-list-type: set
                               selector:
                                 type: string
                             type: object
@@ -249,25 +304,40 @@ spec:
                           methods:
                             items:
                               type: string
+                            maxItems: 20
                             type: array
                           paths:
                             items:
                               properties:
                                 exact:
+                                  maxLength: 1024
                                   type: string
                                 prefix:
+                                  maxLength: 1024
                                   type: string
                               type: object
+                            maxItems: 20
                             type: array
                         type: object
                       icmp:
                         properties:
                           code:
+                            maximum: 255
+                            minimum: 0
                             type: integer
                           type:
+                            maximum: 254
+                            minimum: 0
                             type: integer
                         type: object
+                        x-kubernetes-validations:
+                          - message: ICMP code specified without an ICMP type
+                            reason: FieldValueInvalid
+                            rule: "!has(self.code) || has(self.type)"
                       ipVersion:
+                        enum:
+                          - 4
+                          - 6
                         type: integer
                       metadata:
                         properties:
@@ -279,10 +349,18 @@ spec:
                       notICMP:
                         properties:
                           code:
+                            maximum: 255
+                            minimum: 0
                             type: integer
                           type:
+                            maximum: 254
+                            minimum: 0
                             type: integer
                         type: object
+                        x-kubernetes-validations:
+                          - message: ICMP code specified without an ICMP type
+                            reason: FieldValueInvalid
+                            rule: "!has(self.code) || has(self.type)"
                       notProtocol:
                         anyOf:
                           - type: integer
@@ -303,6 +381,7 @@ spec:
                             items:
                               type: string
                             type: array
+                            x-kubernetes-list-type: set
                           notNets:
                             items:
                               type: string
@@ -333,6 +412,7 @@ spec:
                                 items:
                                   type: string
                                 type: array
+                                x-kubernetes-list-type: set
                               selector:
                                 type: string
                             type: object
@@ -347,6 +427,22 @@ spec:
                     required:
                       - action
                     type: object
+                    x-kubernetes-validations:
+                      - message: rules with HTTP match must have protocol TCP or unset
+                        reason: FieldValueInvalid
+                        rule:
+                          "!has(self.http) || !has(self.protocol) || self.protocol
+                          == 'TCP' || self.protocol == 6"
+                      - message: HTTP match is only valid on Allow rules
+                        reason: FieldValueForbidden
+                        rule: self.action == 'Allow' || !has(self.http)
+                      - message: ports and notPorts cannot be specified with services
+                        reason: FieldValueForbidden
+                        rule:
+                          "!has(self.destination) || !has(self.destination.services)
+                          || (!has(self.destination.ports) || size(self.destination.ports)
+                          == 0) && (!has(self.destination.notPorts) || size(self.destination.notPorts)
+                          == 0)"
                   type: array
                 namespaceSelector:
                   type: string
@@ -354,6 +450,8 @@ spec:
                   type: number
                 performanceHints:
                   items:
+                    enum:
+                      - AssumeNeededOnEveryNode
                     type: string
                   type: array
                 preDNAT:
@@ -363,12 +461,42 @@ spec:
                 serviceAccountSelector:
                   type: string
                 tier:
+                  default: default
                   type: string
                 types:
                   items:
+                    enum:
+                      - Ingress
+                      - Egress
                     type: string
+                  maxItems: 2
+                  minItems: 1
                   type: array
+                  x-kubernetes-list-type: set
               type: object
+              x-kubernetes-validations:
+                - message: preDNAT and doNotTrack cannot both be true
+                  reason: FieldValueForbidden
+                  rule:
+                    "!((has(self.doNotTrack) && self.doNotTrack) && (has(self.preDNAT)
+                    && self.preDNAT))"
+                - message: preDNAT policy cannot have any egress rules
+                  reason: FieldValueForbidden
+                  rule:
+                    (!has(self.preDNAT) || !self.preDNAT) || !has(self.egress) ||
+                    size(self.egress) == 0
+                - message: preDNAT policy cannot have 'Egress' type
+                  reason: FieldValueForbidden
+                  rule:
+                    (!has(self.preDNAT) || !self.preDNAT) || !has(self.types) || !self.types.exists(t,
+                    t == 'Egress')
+                - message:
+                    applyOnForward must be true if either preDNAT or doNotTrack
+                    is true
+                  reason: FieldValueInvalid
+                  rule:
+                    (has(self.applyOnForward) && self.applyOnForward) || ((!has(self.doNotTrack)
+                    || !self.doNotTrack) && (!has(self.preDNAT) || !self.preDNAT))
           type: object
       served: true
       storage: true

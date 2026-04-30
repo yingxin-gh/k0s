@@ -1,10 +1,10 @@
 ---
-# Source: https://github.com/projectcalico/calico/blob/v3.31.5/libcalico-go/config/crd/crd.projectcalico.org_ipamconfigs.yaml
+# Source: https://github.com/projectcalico/calico/blob/v3.32.0/libcalico-go/config/crd/crd.projectcalico.org_ipamconfigs.yaml
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.3
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: ipamconfigs.crd.projectcalico.org
 spec:
   group: crd.projectcalico.org
@@ -30,6 +30,11 @@ spec:
               properties:
                 autoAllocateBlocks:
                   type: boolean
+                kubeVirtVMAddressPersistence:
+                  enum:
+                    - Enabled
+                    - Disabled
+                  type: string
                 maxBlocksPerHost:
                   maximum: 2147483647
                   minimum: 0
