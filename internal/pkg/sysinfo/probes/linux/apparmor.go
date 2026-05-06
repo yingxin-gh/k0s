@@ -6,7 +6,7 @@
 package linux
 
 import (
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/k0sproject/k0s/internal/pkg/sysinfo/probes"
@@ -18,7 +18,7 @@ func checkAppArmor() string {
 	if dir.IsDirectory("/sys/kernel/security/apparmor") {
 		return "active"
 	}
-	lsm, err := ioutil.ReadFile("/sys/kernel/security/lsm")
+	lsm, err := os.ReadFile("/sys/kernel/security/lsm")
 	if err == nil && strings.Contains(string(lsm), "apparmor") {
 		return "inactive"
 	}

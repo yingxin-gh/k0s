@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"testing"
 )
@@ -155,7 +154,7 @@ func TestProxyPROXYOut(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	bs, err := ioutil.ReadAll(fromProxy)
+	bs, err := io.ReadAll(fromProxy)
 	if err != nil {
 		t.Fatal(err)
 	}
