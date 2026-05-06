@@ -63,7 +63,7 @@ require (
 	helm.sh/helm/v3 v3.20.2
 	modernc.org/sqlite v1.50.0
 	oras.land/oras-go/v2 v2.6.0
-	sigs.k8s.io/controller-runtime v0.23.3
+	sigs.k8s.io/controller-runtime v0.24.0
 	sigs.k8s.io/yaml v1.6.0
 )
 
@@ -332,6 +332,3 @@ replace (
 	k8s.io/sample-cli-plugin => k8s.io/sample-cli-plugin v0.36.0
 	k8s.io/sample-controller => k8s.io/sample-controller v0.36.0
 )
-
-// temporarily until we get controller-runtime 0.24.0
-replace sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.23.1-0.20260424122448-c8b4b9d61fbd
